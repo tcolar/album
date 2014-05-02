@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
+	"os"
 	"path"
 )
 
@@ -21,19 +22,19 @@ func NewIndex(conf *AlbumConfig) (indexer *Index, err error) {
 
 	index := Index{
 		conf: conf,
-		root: Album{},
 	}
+	index.loadAlbumIndex()
 
 	return &index, nil
 }
 
-func (i Index) Shutdown() {
+func (i *Index) Shutdown() {
 	// TODO: Anyhting ?
 }
 
 // Update scans the image folder and update the database with found album and pictures
 // For new & updated pictures it will also create scaled down versions & thumbnails
-func (i Index) UpdateAll() {
+func (i *Index) UpdateAll() {
 
 	// Todo : load existing stuff from json
 
@@ -57,6 +58,23 @@ func (i *Index) saveAlbumIndex() {
 		panic(err)
 	}
 	err = ioutil.WriteFile(file, b, 0644)
+}
+
+func (i *Index) loadAlbumIndex() {
+	file := path.Join(i.conf.AlbumDir, "_albums.json")
+	if _, err := os.Stat(file); os.IsNotExist(err) {
+		i.root = Album{}
+		return
+	}
+	log.Printf("Loading album index from %s", file)
+	b, err := ioutil.ReadFile(file)
+	if err != nil {
+		panic(err)
+	}
+	err = json.Unmarshal(b, &i.root)
+	if err != nil {
+		panic(err)
+	}
 }
 
 // UpdateAlbum removes albums & pics that are no longer present on disk, from the index.

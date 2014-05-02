@@ -1,0 +1,40 @@
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Arrow Navigator Example - Jssor Slider, Slideshow</title>
+
+    <link rel="stylesheet" href="/css/normalize.css">
+    <link rel="stylesheet" href="/css/foundation.min.css">
+
+    <script src="/js/vendor/modernizr.js"></script>
+  </head>
+
+
+<body style="background-color:#333;">
+
+
+<div class="container">
+{{range .albums}}
+  <li><a href="{{.}}/">{{.}}</a></li>
+{{end}}
+</div>
+
+<div class="container">
+<ul class="clearing-thumbs" data-clearing>
+{{range .pics}}
+  <li><a href="/_img/{{.}}"><img src="/_img/{{.}}" style="width:200px; height:200px"></a></li>
+{{end}}
+</ul>
+</div>
+
+
+<script src="/js/vendor/jquery.js"></script>
+<script src="/js/foundation.min.js"></script>
+<script src="/js/foundation/foundation.topbar.js"></script>
+<script src="/js/foundation/foundation.clearing.js"></script>
+<script>
+    $(document).foundation();
+</script>
+</body>
+</html>

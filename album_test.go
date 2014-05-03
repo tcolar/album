@@ -33,8 +33,6 @@ func TestIndex(t *testing.T) {
 
 	index.UpdateAll()
 
-	//pretty.Log(index.root)
-
 	_, err = os.Open("./tmp/_albums.json")
 
 	Convey("Album index file", t, func() {
@@ -91,6 +89,5 @@ func checkRoot(t *testing.T, testTitle string, root *Album) {
 		So(d11.Name, ShouldEqual, "d11")
 		So(d11.Ordering, ShouldEqual, 0)
 		So(d11.Hidden, ShouldEqual, false)
-		So(d11.dirty, ShouldEqual, true)
 	})
 }

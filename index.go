@@ -11,6 +11,8 @@ import (
 	"sort"
 )
 
+// TODO: Use channels to write json files
+
 type Index struct {
 	conf *AlbumConfig
 	root Album // In memory index
@@ -22,7 +24,10 @@ func NewIndex(conf *AlbumConfig) (indexer *Index, err error) {
 	index := Index{
 		conf: conf,
 	}
+
 	index.loadAlbumIndex()
+
+	index.loadAllAlbumPics(&index.root, index.conf.AlbumDir)
 
 	return &index, nil
 }
@@ -31,7 +36,7 @@ func NewIndex(conf *AlbumConfig) (indexer *Index, err error) {
 // For new & updated pictures it will also create scaled down versions & thumbnails
 func (i *Index) UpdateAll() {
 
-	// Todo : load existing stuff from json
+	log.Print("Starting index update.")
 
 	dirtyAlbums := i.Cleanup(&i.root)
 	dirtyAlbums = i.UpdateAlbum(i.conf.AlbumDir, &i.root) || dirtyAlbums
@@ -129,7 +134,7 @@ func (i *Index) saveDirtyAlbums(album *Album, dir string) {
 		// Sort them before saving
 		sort.Sort(album.pics)
 		i.saveAlbumPics(album, dir)
-		// TODO: switch back to ! dirty
+		// TODO: switch back to ! dirty -> not needed since serialization will lose it ?
 	}
 	// recurse
 	for _, a := range album.Children {
@@ -175,10 +180,18 @@ func (i *Index) loadAlbumIndex() {
 	if err != nil {
 		panic(err)
 	}
-	// TODO : load pics
 }
 
-// loadAlbumPics load the pictures of a gven index from the json file
+// Load the pictures of all albums from json (recursively)
+func (i *Index) loadAllAlbumPics(album *Album, dir string) {
+	i.loadAlbumPics(album, dir)
+	for c, _ := range album.Children {
+		subPtr := &album.Children[c] // need to do this to pass by reference
+		i.loadAllAlbumPics(subPtr, path.Join(dir, subPtr.Name))
+	}
+}
+
+// loadAlbumPics load the pictures of a given album from the json file
 func (i *Index) loadAlbumPics(album *Album, dir string) {
 	file := path.Join(dir, "_pics.json")
 	if _, err := os.Stat(file); os.IsNotExist(err) {
@@ -189,6 +202,9 @@ func (i *Index) loadAlbumPics(album *Album, dir string) {
 	b, err := ioutil.ReadFile(file)
 	if err != nil {
 		panic(err)
+	}
+	if album.pics == nil {
+		album.pics = Pics{}
 	}
 	err = json.Unmarshal(b, &album.pics)
 	if err != nil {

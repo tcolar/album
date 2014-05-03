@@ -20,19 +20,6 @@ func IsImage(f os.FileInfo) bool {
 }
 
 /*
-import (
-  "image"
-  _ "image/gif"
-  "image/jpeg"
-  _ "image/png"
-  "log"
-  "os"
-  "path"
-  "path/filepath"
-  "strings"
-
-  "github.com/nfnt/resize"
-)
 
 // Serving Images (With caching + resizing)
 type ImageSvc struct {

@@ -60,9 +60,5 @@ func Run() {
 		r.HTML(200, "home", data)
 	})
 
-	defer func() {
-		index.Shutdown()
-	}()
-
 	m.Run()
 }

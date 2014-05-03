@@ -4,7 +4,7 @@ package album
 
 // Album represents a collection of Pics
 type Album struct {
-	Path         string // Relative (file) path from parent
+	Path         string // Relative path from album root
 	Name         string // Pretty name, might or not be same as Path
 	Description  string
 	HighlightPic string // Album highligh picture relative path
@@ -13,18 +13,8 @@ type Album struct {
 	Children     []Album
 
 	// Not serialized along with album structure
-	pics  []Pic
+	pics  Pics
 	dirty bool // Wheter it's "dirty" (pics changed)
-}
-
-// Pic representents an individual picture / file
-type Pic struct {
-	Path        string
-	Name        string
-	Description string
-	Ordering    int  // if 0 will order by path
-	Hidden      bool // wether that picture should be hidden / desactivated
-	ModTime     int64
 }
 
 // Album return a child album album by path, or nil if none found.
@@ -37,50 +27,46 @@ func (a Album) Child(path string) *Album {
 	return nil
 }
 
-/*
-func PicByPath(i *Index, path string) *Pic {
-  pic := Pic{}
-  err := i.dbGetBson("pics", path, &pic)
-  if err != nil {
-    log.Print(err)
-    return nil
-  }
-  return &pic
+// Find a picture of the album by path
+func (a Album) Pic(path string) *Pic {
+	for _, pic := range a.pics {
+		if pic.Path == path {
+			return &pic
+		}
+	}
+	return nil
 }
 
-// Create the given album in the db
-func (p Pic) Save(i *Index) {
-  log.Printf("Saving pic %s", p.Path)
-  err := i.dbSetBson("pics", p.Path, p)
-  pics := myDB.Use("Pics")
-  // Insert document (document must be map[string]interface{})
-  id, err := feeds.Insert()
-  if err != nil {
-    panic(err)
-  }
-  p.Id = id
+// Return the pic with the most recent ModTime
+// or nil of there are no pics
+func (a Album) LatestPic() *Pic {
+	var pic *Pic
+	for _, p := range a.pics {
+		if pic == nil || p.ModTime > pic.ModTime {
+			pic = &p
+		}
+	}
+	return pic
 }
 
-// Create the given album in the db
-func (a Album) Save(i *Index) {
-  log.Printf("Saving album %s", a.Path)
-  err := i.dbSetBson("albums", a.Path, a)
-  if err != nil {
-    panic(err)
-  }
+// Collection of pics with sorting - Sorts the pics by sorting, path
+type Pics []Pic
+
+func (p Pics) Len() int      { return len(p) }
+func (p Pics) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
+func (p Pics) Less(i, j int) bool {
+	if p[i].Ordering == p[j].Ordering {
+		return p[i].Name < p[j].Name
+	}
+	return p[i].Ordering < p[j].Ordering
 }
 
-func AlbumByPath(i *Index, path string) *Album {
-  album := Album{}
-  err := i.dbGetBson("albums", path, &album)
-  if err != nil {
-    log.Print(err)
-    return nil
-  }
-  return &album
+// Pic representents an individual picture / file
+type Pic struct {
+	Path        string
+	Name        string
+	Description string
+	Ordering    int  // if 0 will order by path
+	Hidden      bool // wether that picture should be hidden / desactivated
+	ModTime     int64
 }
-
-// Props stores global DB props
-type Props struct {
-  Version int
-}*/

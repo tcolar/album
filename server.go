@@ -3,8 +3,9 @@
 package album
 
 import (
-	"log"
 	"net/http"
+	"path"
+	"strings"
 
 	"github.com/go-martini/martini"
 	"github.com/martini-contrib/render"
@@ -22,7 +23,7 @@ func Run() {
 		panic(err)
 	}
 
-	// Index all abum & images asynchronously
+	// Index all albums & images asynchronously
 	go index.UpdateAll()
 
 	m := martini.Classic()
@@ -37,22 +38,26 @@ func Run() {
 		albums := []string{}
 		pics := []string{}
 
-		url := req.URL.Path[1:]
-		if len(url) > 0 && url[len(url)-1] == '/' {
-			url = url[0 : len(url)-1]
+		parts := strings.Split(req.URL.Path, "/")
+		album := &index.root
+		for _, p := range parts {
+			if len(p) == 0 {
+				continue
+			}
+			album = album.Child(p)
+			if album == nil {
+				break
+			}
 		}
-		log.Printf("url: %s", url)
-		/*album := index.Albums[url]
-		  log.Printf("album: %v", album)
-		  for _, pic := range album.Pics {
-		    pics = append(pics, pic.Path)
-		  }
-		  for k, a := range index.Albums {
-		    log.Printf("%s -> %s | %s", k, album.Path, a.ParentPath)
-		    if album.Path == a.ParentPath {
-		      albums = append(albums, a.Name)
-		    }
-		  }*/
+
+		if album != nil {
+			for _, a := range album.Children {
+				albums = append(albums, a.Path)
+			}
+			for _, p := range album.pics {
+				pics = append(pics, path.Join(req.URL.Path, p.Name))
+			}
+		}
 		data := map[string]interface{}{
 			"albums": albums,
 			"pics":   pics,

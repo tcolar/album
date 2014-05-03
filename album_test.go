@@ -54,6 +54,7 @@ func TestIndex(t *testing.T) {
 	checkRoot(t, "Initial in memory index", &index2.root)
 
 	// TODO: Test cleanup, updates, chnages etc ....
+	// TODO: Test ordering
 }
 
 // check the initial root album

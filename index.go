@@ -114,13 +114,14 @@ func (i *Index) UpdateAlbum(dir string, album *Album) bool {
 			// file
 			ts := f.ModTime().Unix()
 			if IsImage(f) && ts > mostRecentPicTs {
+				log.Print(f)
 				album.dirty = true
-				pic := &Pic{
+				pic := Pic{
 					Path:    f.Name(),
 					Name:    f.Name(),
 					ModTime: ts,
 				}
-				album.pics = append(album.pics, *pic)
+				album.pics = append(album.pics, pic)
 			}
 		}
 	}
@@ -130,6 +131,7 @@ func (i *Index) UpdateAlbum(dir string, album *Album) bool {
 
 // Recursively save all albums whose content is dirty
 func (i *Index) saveDirtyAlbums(album *Album, dir string) {
+	log.Printf("sda %s", dir)
 	if album.dirty {
 		// Sort them before saving
 		sort.Sort(album.pics)
@@ -137,8 +139,9 @@ func (i *Index) saveDirtyAlbums(album *Album, dir string) {
 		// TODO: switch back to ! dirty -> not needed since serialization will lose it ?
 	}
 	// recurse
-	for _, a := range album.Children {
-		i.saveDirtyAlbums(&a, path.Join(dir, a.Name))
+	for c, _ := range album.Children {
+		child := &album.Children[c]
+		i.saveDirtyAlbums(child, path.Join(dir, child.Name))
 	}
 }
 

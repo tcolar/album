@@ -20,7 +20,7 @@ Features:
 * serve album pics
 * basic web frontend to serve responsive catalog.
 - "Breacrumbs" / Album navifation
-- Hedaer / footer or "embedding" (spit out html ??)
+- Header / footer or "embedding" (spit out html ??)
 - Make it obvious what's an album vs what's an image ?
 - generate and serve thumbnails (say 200px?)
 - generate and server scaled images (full, 500, 1000 ?)
@@ -30,7 +30,7 @@ Features:
 - admin login
 - ability to update album meta (name, description, hidden etc..)
 - Update index (whole or indivual album/pics)
-- implement hiiden albums & pics -> still can be accesed if no url ?? -> can be seen in jsn file !!
+- implement hiiden albums & pics -> still can be accesed if no url ?? -> can be seen in json file !!
 - ability to select highlight
 - ability to reorder items
 - ability to scale images (original)

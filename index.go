@@ -15,7 +15,7 @@ import (
 
 type Index struct {
 	conf *AlbumConfig
-	root Album // In memory index
+	root Album // In memory tree index
 }
 
 // NewIndex creates a new indexer
@@ -32,7 +32,7 @@ func NewIndex(conf *AlbumConfig) (indexer *Index, err error) {
 	return &index, nil
 }
 
-// Update scans the image folder and update the database with found album and pictures
+// UpdateAll scans the image folder and update the database with found album and pictures
 // For new & updated pictures it will also create scaled down versions & thumbnails
 func (i *Index) UpdateAll() {
 
@@ -40,8 +40,9 @@ func (i *Index) UpdateAll() {
 
 	dirtyAlbums := i.Cleanup(&i.root)
 	dirtyAlbums = i.UpdateAlbum(i.conf.AlbumDir, &i.root) || dirtyAlbums
+	dirtyAlbums = i.UpdateHighLights(&i.root) || dirtyAlbums
 
-	// This means the album tree structure itself has chnaged
+	// This means the album tree structure itself has changed
 	if dirtyAlbums {
 		i.saveAlbumIndex()
 	}
@@ -52,9 +53,9 @@ func (i *Index) UpdateAll() {
 	log.Print("Index update completed.")
 }
 
-// UpdateAlbum removes albums & pics that are no longer present on disk, from the index.
+// Cleanup removes albums & pics that are no longer present on disk, from the index.
 // Returns wether the album index is dirty
-// Also sets dirty bits on individual albums as needed
+// Also will set dirty var on individual albums as needed
 func (i *Index) Cleanup(album *Album) bool {
 	dirty := false
 	//for _, child := range album.Children {
@@ -77,13 +78,8 @@ func (i *Index) UpdateAlbum(dir string, album *Album) bool {
 
 	dirty := false
 
-	// Browse disk
-	// -> new album (path) -> create
-	// -> new image (path) -> create
-	// -> Updated image (ts) -> ??
-	// create scaled down image and thumbails for new images
-
-	//highlight := "" // TODO
+	// TODO highlight
+	//: highlight := ""
 
 	// Recurse into subalbums
 	files, _ := ioutil.ReadDir(dir)
@@ -213,4 +209,41 @@ func (i *Index) loadAlbumPics(album *Album, dir string) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+// Returns wether the album index s drty
+func (i *Index) UpdateHighLights(a *Album) bool {
+
+	dirty := false
+
+	// Recurse first since an album highlight might bubbe up.
+	for c, _ := range a.Children {
+		child := &a.Children[c]
+		dirty = i.UpdateHighLights(child) || dirty
+	}
+
+	if len(a.HighlightPic) > 0 && a.Pic(a.HighlightPic) != nil {
+		// Valid highlight, leave it alone
+		return dirty
+	}
+
+	// if no highlight defined return first pic of album
+	if len(a.pics) > 0 {
+		dirty = true
+		a.HighlightPic = a.pics[0].Path
+		return dirty
+	}
+
+	// If no images in album, return highlight of first subalbum
+	if len(a.Children) > 0 {
+		dirty = true
+		a.HighlightPic = path.Join(a.Children[0].Path, a.Children[0].HighlightPic)
+		return dirty
+	}
+
+	// Nothing found, leave it alone, will try again next time
+	a.HighlightPic = ""
+
+	return dirty
+
 }

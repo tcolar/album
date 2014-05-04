@@ -5,16 +5,16 @@ package album
 // Album represents a collection of Pics
 type Album struct {
 	Path         string // Relative path from album root
-	Name         string // Pretty name, might or not be same as Path
+	Name         string // Pretty name, defualts to folder name
 	Description  string
-	HighlightPic string // Album highligh picture relative path
-	Ordering     int    // if 0 will order by path
+	HighlightPic string // Album highlight picture relative path.
+	Ordering     int    // if equal secondary ordering is by name
 	Hidden       bool   // wether that album/folder should be hidden
 	Children     []Album
 
-	// Not serialized along with album structure
+	// Not serialized along with album structure (serialized separaetely)
 	pics  Pics
-	dirty bool // Wheter it's "dirty" (pics changed)
+	dirty bool // Wheter the album content is "dirty" (pics changed)
 }
 
 // Album return a child album album by path, or nil if none found.
@@ -49,7 +49,7 @@ func (a Album) LatestPic() *Pic {
 	return pic
 }
 
-// Collection of pics with sorting - Sorts the pics by sorting, path
+// Collection of picture with sorting. Sorts the pics by sorting, path
 type Pics []Pic
 
 func (p Pics) Len() int      { return len(p) }

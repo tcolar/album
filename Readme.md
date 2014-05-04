@@ -12,12 +12,12 @@ Features:
   - .... TODO ....
 
 ### TODO:
-- index albums
-- index pics
-- test indexer
-- list albums
-- list album pics
-- server album pics
+* index albums
+* index pics
+* test indexer
+* list albums
+* list album pics
+* server album pics
 - generate and serve thumbnails
 - generate and server scaled images
 

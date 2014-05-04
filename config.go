@@ -7,4 +7,6 @@ package album
 type AlbumConfig struct {
 	AlbumDir string
 	DbDir    string
+	// TODO: make gallery server optional ?
+	// TODO: make api server optional ?
 }

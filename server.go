@@ -30,12 +30,12 @@ func Run() {
 	m.Use(render.Renderer())
 
 	root := conf.AlbumDir
-	m.Use(martini.Static(root, martini.StaticOptions{
-		Prefix: "_img",
-	}))
 
-	m.Get("/**", func(r render.Render, req *http.Request) {
-		albums := []string{}
+	m.Use(martini.Static(root, martini.StaticOptions{}))
+
+	m.Get("/**", func(r render.Render, req *http.Request, res http.ResponseWriter) {
+
+		albums := []Album{}
 		pics := []string{}
 
 		parts := strings.Split(req.URL.Path, "/")
@@ -52,7 +52,7 @@ func Run() {
 
 		if album != nil {
 			for _, a := range album.Children {
-				albums = append(albums, a.Path)
+				albums = append(albums, a)
 			}
 			for _, p := range album.pics {
 				pics = append(pics, path.Join(req.URL.Path, p.Name))

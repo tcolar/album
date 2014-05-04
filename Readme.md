@@ -17,25 +17,30 @@ Features:
 * test indexer
 * list albums
 * list album pics
-* server album pics
-- generate and serve thumbnails
-- generate and server scaled images
+* serve album pics
+* basic web frontend to serve responsive catalog.
+- "Breacrumbs" / Album navifation
+- Hedaer / footer or "embedding" (spit out html ??)
+- Make it obvious what's an album vs what's an image ?
+- generate and serve thumbnails (say 200px?)
+- generate and server scaled images (full, 500, 1000 ?)
 
-- basic web frontend to serve responsive catalog.
 
+# admin
 - admin login
 - ability to update album meta (name, description, hidden etc..)
-- implement hiiden albums & pics -> still can be accesed if no url ??
-- ability to selet highlight
+- Update index (whole or indivual album/pics)
+- implement hiiden albums & pics -> still can be accesed if no url ?? -> can be seen in jsn file !!
+- ability to select highlight
 - ability to reorder items
-
-- ability to scale images
+- ability to scale images (original)
 - ability to rotate images
 - ability to upload image or zip of images
 
-- Stats (# of views) for images ?
-
-- API's to retrieve albums & pics
+#API
+- API's to retrieve albums & pics -> + to embed in ther site ?
 - API's to modify data ?
 
+#Other
+- Stats (# of views) for images ?
 

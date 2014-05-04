@@ -31,6 +31,8 @@ func Run() {
 
 	root := conf.AlbumDir
 
+	// To serve pictures
+	// TODO: Protect json files ?
 	m.Use(martini.Static(root, martini.StaticOptions{}))
 
 	m.Get("/**", func(r render.Render, req *http.Request, res http.ResponseWriter) {

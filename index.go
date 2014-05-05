@@ -117,6 +117,7 @@ func (i *Index) UpdateAlbum(dir string, album *Album) bool {
 					Name:    f.Name(),
 					ModTime: ts,
 				}
+				// TODO: Create thumbnails
 				album.pics = append(album.pics, pic)
 			}
 		}

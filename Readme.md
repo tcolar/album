@@ -25,6 +25,8 @@ Features:
 - generate and serve thumbnails (say 200px?)
 - generate and server scaled images (full, 500, 1000 ?)
 
+- Use an interface for all index storage ops, so could easily replace with some "real" db later
+- Sync JSON ops using chnannels to be concurent safe.
 
 # admin
 - admin login

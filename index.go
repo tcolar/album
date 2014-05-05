@@ -133,7 +133,6 @@ func (i *Index) saveDirtyAlbums(album *Album, dir string) {
 		// Sort them before saving
 		sort.Sort(album.pics)
 		i.saveAlbumPics(album, dir)
-		// TODO: switch back to ! dirty -> not needed since serialization will lose it ?
 	}
 	// recurse
 	for c, _ := range album.Children {

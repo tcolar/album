@@ -14,15 +14,17 @@ import (
 // TODO: Use channels to write json files
 
 type Index struct {
-	conf *AlbumConfig
-	root Album // In memory tree index
+	conf   *AlbumConfig
+	root   Album // In memory tree index
+	imgSvc ImageSvc
 }
 
 // NewIndex creates a new indexer
 func NewIndex(conf *AlbumConfig) (indexer *Index, err error) {
 
 	index := Index{
-		conf: conf,
+		conf:   conf,
+		imgSvc: ImageSvc{},
 	}
 
 	index.loadAlbumIndex()
@@ -110,20 +112,31 @@ func (i *Index) UpdateAlbum(dir string, album *Album) bool {
 			// file
 			ts := f.ModTime().Unix()
 			if IsImage(f) && ts > mostRecentPicTs {
-				log.Print(f)
 				album.dirty = true
 				pic := Pic{
 					Path:    f.Name(),
 					Name:    f.Name(),
 					ModTime: ts,
 				}
-				// TODO: Create thumbnails
-				album.pics = append(album.pics, pic)
+				// TODO: start those in a sigle background go routine / queue (channel)
+				err := i.createScaledImages(fp)
+				if err != nil {
+					log.Print(err)
+				} else {
+					album.pics = append(album.pics, pic)
+				}
 			}
 		}
 	}
 
 	return dirty
+}
+
+//  createScaledImages creates scaled down version of the images (thumbnails etc..)
+func (i *Index) createScaledImages(fp string) error {
+	dest := path.Join(path.Dir(fp), "_thumb", path.Base(fp))
+	log.Printf("scaling %s to %s", fp, dest)
+	return i.imgSvc.ResizeImage(fp, dest, 200, 0)
 }
 
 // Recursively save all albums whose content is dirty

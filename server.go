@@ -38,7 +38,7 @@ func Run() {
 	m.Get("/**", func(r render.Render, req *http.Request, res http.ResponseWriter) {
 
 		albums := []Album{}
-		pics := []string{}
+		pics := [][]string{}
 
 		parts := strings.Split(req.URL.Path, "/")
 		album := &index.root
@@ -57,7 +57,9 @@ func Run() {
 				albums = append(albums, a)
 			}
 			for _, p := range album.pics {
-				pics = append(pics, path.Join(req.URL.Path, p.Name))
+				pics = append(pics, []string{
+					path.Join(req.URL.Path, p.Name),
+					path.Join(req.URL.Path, "_thumb", p.Name)})
 			}
 		}
 		data := map[string]interface{}{

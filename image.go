@@ -1,6 +1,7 @@
 package album
 
 import (
+	"fmt"
 	"image"
 	"image/gif"
 	"image/jpeg"
@@ -17,6 +18,22 @@ var ImageExts = []string{".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff"}
 
 // Serving Images (With caching + resizing)
 type ImageSvc struct {
+}
+
+// ResizeImage resizes the image original image and saves it as target
+// Try to keep the original image frmat from it's extension. Uses the encoder default options
+// Errors ut if the file is not gif, jpeg or png.
+func (c ImageSvc) ResizeImage(original, target string, width, height uint) error {
+	ext := strings.ToLower(filepath.Ext(original))
+	switch ext {
+	case ".jpg", ".jpeg":
+		return c.ResizeImageJpeg(original, target, width, height, 90)
+	case ".png":
+		return c.ResizeImagePng(original, target, width, height)
+	case ".gif":
+		return c.ResizeImageGif(original, target, width, height, &gif.Options{})
+	}
+	return fmt.Errorf("Unsupported image file: %s", original)
 }
 
 // ResizeImageGif resizes the original image and saves it as target in Png format

@@ -50,6 +50,8 @@ func TestIndex(t *testing.T) {
 
 	// Run update ... no changes should have taken place
 	// then check again that it's still the same
+
+	// TODO: Check that the index was not overwritten (file timestamp)
 	index2.UpdateAll()
 	checkRoot(t, "Initial in memory index", &index2.root)
 

@@ -15,7 +15,7 @@
 {{range .albums}}
     <div class="small-6 medium-4 large-2 columns" style="text-align:center;margin-bottom:20px;">
     <span>{{.Name}}</span><br/>
-    <a href="{{.Path}}/"><img src="{{.Path}}/{{.HighlightPic}}" style="width:200px;height:200px"></a>
+    <a href="{{.Path}}/"><img src="{{.Path}}/_thumb/{{.HighlightPic}}" style="width:200px;height:200px"></a>
     </div>
 {{end}}
 </div>
@@ -23,7 +23,7 @@
 <div class="container">
 <ul class="clearing-thumbs" data-clearing>
 {{range .pics}}
-  <li><a href="{{.}}"><img src="{{.}}" style="width:200px; height:200px"></a></li>
+  <li><a href="{{index . 0}}"><img src="{{index . 1}}" style="width:200px; height:200px"></a></li>
 {{end}}
 </ul>
 </div>

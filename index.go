@@ -93,7 +93,7 @@ func (i *Index) UpdateAlbum(dir string, album *Album) bool {
 	for _, f := range files {
 		nm := f.Name()
 		fp := path.Join(dir, nm)
-		if f.IsDir() {
+		if f.IsDir() && nm != "_thumb" {
 			// dir
 			child := album.Child(nm)
 			if child == nil {
@@ -134,9 +134,17 @@ func (i *Index) UpdateAlbum(dir string, album *Album) bool {
 
 //  createScaledImages creates scaled down version of the images (thumbnails etc..)
 func (i *Index) createScaledImages(fp string) error {
+	return i.createThumbnail(fp, 200, 200)
+}
+
+// createThumbnail creates a thumbnail of given size in png format
+// Keep original image scale & pad with transaperency
+func (i *Index) createThumbnail(fp string, w, h int) error {
+	fname := path.Base(fp)
+	fname = fname[:len(fname)-len(path.Ext(fname))] + ".png"
 	dest := path.Join(path.Dir(fp), "_thumb", path.Base(fp))
 	log.Printf("scaling %s to %s", fp, dest)
-	return i.imgSvc.ResizeImage(fp, dest, 200, 0)
+	return i.imgSvc.ResizeImageWithin(fp, dest, w, h)
 }
 
 // Recursively save all albums whose content is dirty

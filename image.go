@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/nfnt/resize"
+	"code.google.com/p/graphics-go/graphics"
 )
 
 var ImageExts = []string{".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff"}
@@ -20,11 +20,45 @@ var ImageExts = []string{".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff"}
 type ImageSvc struct {
 }
 
+/*
+// TODO: ResizeImageWithin with padding ?
+// would create an image of exactly width*height padded with transparency.
+// obviously would not work wth jpg though
+func (c ImageSvc) ResizeImageWithin(original, target string, width, height int) error {
+}
+*/
+
 // ResizeImage resizes the image original image and saves it as target
-// Try to keep the original image frmat from it's extension. Uses the encoder default options
-// Errors ut if the file is not gif, jpeg or png.
-func (c ImageSvc) ResizeImage(original, target string, width, height uint) error {
-	ext := strings.ToLower(filepath.Ext(original))
+// It makes the source image FIT within width and heigth (whihchever is the smallest)
+// Try to keep the original image format from it's extension. Uses the encoder default options
+// Errors out if the file is not gif, jpeg or png.
+func (c ImageSvc) ResizeImageWithin(original, target string, width, height int) error {
+	file, err := os.Open(original)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	config, _, err := image.DecodeConfig(file)
+	if err != nil {
+		return err
+	}
+	// calculate scaling ratios
+	w, h := width, height
+	wr, hr := float32(config.Width)/float32(width), float32(config.Height)/float32(height)
+	// using whichever is smaller to fit within width, height
+	if wr > hr {
+		h = int(float32(h) / hr)
+	} else {
+		w = int(float32(w) / wr)
+	}
+	return c.ResizeImage(original, target, w, h)
+}
+
+// ResizeImage resizes the image original image and saves it as target
+// Try to guess the dest image format from it's extension. Uses the encoder default options
+// Errors out if the file is not gif, jpeg or png.
+func (c ImageSvc) ResizeImage(original, target string, width, height int) error {
+	ext := strings.ToLower(filepath.Ext(target))
 	switch ext {
 	case ".jpg", ".jpeg":
 		return c.ResizeImageJpeg(original, target, width, height, 90)
@@ -37,7 +71,7 @@ func (c ImageSvc) ResizeImage(original, target string, width, height uint) error
 }
 
 // ResizeImageGif resizes the original image and saves it as target in Png format
-func (c ImageSvc) ResizeImagePng(original, target string, width, height uint) error {
+func (c ImageSvc) ResizeImagePng(original, target string, width, height int) error {
 	img, err := c.resizeImage(original, target, width, height)
 	if err != nil {
 		return err
@@ -53,7 +87,7 @@ func (c ImageSvc) ResizeImagePng(original, target string, width, height uint) er
 }
 
 // ResizeImageGif resizes the original image and saves it as target in Jpeg format
-func (c ImageSvc) ResizeImageJpeg(original, target string, width, height uint, quality int) error {
+func (c ImageSvc) ResizeImageJpeg(original, target string, width, height int, quality int) error {
 	img, err := c.resizeImage(original, target, width, height)
 	if err != nil {
 		return err
@@ -71,7 +105,7 @@ func (c ImageSvc) ResizeImageJpeg(original, target string, width, height uint, q
 }
 
 // ResizeImageGif resizes the original image and saves it as target in Gif format
-func (c ImageSvc) ResizeImageGif(original, target string, width, height uint, options *gif.Options) error {
+func (c ImageSvc) ResizeImageGif(original, target string, width, height int, options *gif.Options) error {
 	img, err := c.resizeImage(original, target, width, height)
 	if err != nil {
 		return err
@@ -86,7 +120,7 @@ func (c ImageSvc) ResizeImageGif(original, target string, width, height uint, op
 	return gif.Encode(out, img, options)
 }
 
-func (c ImageSvc) resizeImage(original, target string, width, height uint) (img image.Image, err error) {
+func (c ImageSvc) resizeImage(original, target string, width, height int) (img image.Image, err error) {
 	file, err := os.Open(original)
 	if err != nil {
 		return img, err
@@ -96,9 +130,13 @@ func (c ImageSvc) resizeImage(original, target string, width, height uint) (img 
 	if err != nil {
 		return img, err
 	}
-
-	// TODO: let user pick interpolation function ?
-	return resize.Resize(width, height, img, resize.Bilinear), nil
+	// scale
+	toImg := image.NewRGBA64(image.Rect(0, 0, width, height))
+	err = graphics.Scale(toImg, img)
+	if err != nil {
+		return toImg, err
+	}
+	return toImg, err
 }
 
 // IsImage quickly checks if a file looks like an image looking at the file extension.

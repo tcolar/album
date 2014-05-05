@@ -59,7 +59,7 @@ func Run() {
 			for _, p := range album.pics {
 				pics = append(pics, []string{
 					path.Join(req.URL.Path, p.Name),
-					path.Join(req.URL.Path, "_thumb", p.Name)})
+					path.Join("/_scaled", "thumb", req.URL.Path, p.Name)})
 			}
 		}
 		data := map[string]interface{}{

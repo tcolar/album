@@ -20,64 +20,56 @@ var ImageExts = []string{".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff"}
 type ImageSvc struct {
 }
 
-/*
-// TODO: ResizeImageWithin with padding ?
-// would create an image of exactly width*height padded with transparency.
-// obviously would not work wth jpg though
-func (c ImageSvc) ResizeImageWithin(original, target string, width, height int) error {
-}
-*/
+// Pad the image with transparency
+// Creates a transparent image of width*heigth size with img centered in the center.
+//func (c ImageSvc) PadImage(width, height int, img image.Image) (img image.Image, err error) {
+//}
 
-// ResizeImage resizes the image original image and saves it as target
-// It makes the source image FIT within width and heigth (whihchever is the smallest)
-// Try to keep the original image format from it's extension. Uses the encoder default options
-// Errors out if the file is not gif, jpeg or png.
-func (c ImageSvc) ResizeImageWithin(original, target string, width, height int) error {
-	file, err := os.Open(original)
+// ReadImage eads an image from file
+func (c ImageSvc) ReadImage(imgPath string) (img image.Image, err error) {
+	file, err := os.Open(imgPath)
 	if err != nil {
-		return err
+		return img, err
 	}
 	defer file.Close()
-	config, _, err := image.DecodeConfig(file)
-	if err != nil {
-		return err
-	}
-	// calculate scaling ratios
-	w, h := width, height
-	wr, hr := float32(config.Width)/float32(width), float32(config.Height)/float32(height)
-	// using whichever is smaller to fit within width, height
-	if wr > hr {
-		h = int(float32(h) / hr)
-	} else {
-		w = int(float32(w) / wr)
-	}
-	return c.ResizeImage(original, target, w, h)
+	img, _, err = image.Decode(file)
+	return img, err
 }
 
-// ResizeImage resizes the image original image and saves it as target
+// ReadImageConfig reads the image config from file
+func (c ImageSvc) ReadImageConfig(imgPath string) (config image.Config, err error) {
+	file, err := os.Open(imgPath)
+	if err != nil {
+		return config, err
+	}
+	defer file.Close()
+	config, _, err = image.DecodeConfig(file)
+	if err != nil {
+		return config, err
+	}
+	return config, nil
+}
+
+// SaveImage saves the image usng the proper encoder
 // Try to guess the dest image format from it's extension. Uses the encoder default options
 // Errors out if the file is not gif, jpeg or png.
-func (c ImageSvc) ResizeImage(original, target string, width, height int) error {
-	ext := strings.ToLower(filepath.Ext(target))
+func (c ImageSvc) SaveImage(img image.Image, filePath string) error {
+	ext := strings.ToLower(filepath.Ext(filePath))
 	switch ext {
 	case ".jpg", ".jpeg":
-		return c.ResizeImageJpeg(original, target, width, height, 90)
+		return c.SaveJpeg(img, filePath, 90)
 	case ".png":
-		return c.ResizeImagePng(original, target, width, height)
+		return c.SavePng(img, filePath)
 	case ".gif":
-		return c.ResizeImageGif(original, target, width, height, &gif.Options{})
+		return c.SaveGif(img, filePath, &gif.Options{})
 	}
-	return fmt.Errorf("Unsupported image file: %s", original)
+	return fmt.Errorf("Unsupported image file: %s", filePath)
 }
 
-// ResizeImageGif resizes the original image and saves it as target in Png format
-func (c ImageSvc) ResizeImagePng(original, target string, width, height int) error {
-	img, err := c.resizeImage(original, target, width, height)
-	if err != nil {
-		return err
-	}
-	os.MkdirAll(path.Dir(target), 0755)
-	out, err := os.Create(target)
+// SavePng saves img in PNG format
+func (c ImageSvc) SavePng(img image.Image, filePath string) error {
+	os.MkdirAll(path.Dir(filePath), 0755)
+	out, err := os.Create(filePath)
 	if err != nil {
 		return err
 	}
@@ -86,14 +78,10 @@ func (c ImageSvc) ResizeImagePng(original, target string, width, height int) err
 	return png.Encode(out, img)
 }
 
-// ResizeImageGif resizes the original image and saves it as target in Jpeg format
-func (c ImageSvc) ResizeImageJpeg(original, target string, width, height int, quality int) error {
-	img, err := c.resizeImage(original, target, width, height)
-	if err != nil {
-		return err
-	}
-	os.MkdirAll(path.Dir(target), 0755)
-	out, err := os.Create(target)
+// SaveJpeg saves img in JPEG format
+func (c ImageSvc) SaveJpeg(img image.Image, filePath string, quality int) error {
+	os.MkdirAll(path.Dir(filePath), 0755)
+	out, err := os.Create(filePath)
 	if err != nil {
 		return err
 	}
@@ -104,14 +92,10 @@ func (c ImageSvc) ResizeImageJpeg(original, target string, width, height int, qu
 	return jpeg.Encode(out, img, &options)
 }
 
-// ResizeImageGif resizes the original image and saves it as target in Gif format
-func (c ImageSvc) ResizeImageGif(original, target string, width, height int, options *gif.Options) error {
-	img, err := c.resizeImage(original, target, width, height)
-	if err != nil {
-		return err
-	}
-	os.MkdirAll(path.Dir(target), 0755)
-	out, err := os.Create(target)
+// SaveGif saves img in GF format
+func (c ImageSvc) SaveGif(img image.Image, filePath string, options *gif.Options) error {
+	os.MkdirAll(path.Dir(filePath), 0755)
+	out, err := os.Create(filePath)
 	if err != nil {
 		return err
 	}
@@ -120,16 +104,23 @@ func (c ImageSvc) ResizeImageGif(original, target string, width, height int, opt
 	return gif.Encode(out, img, options)
 }
 
-func (c ImageSvc) resizeImage(original, target string, width, height int) (img image.Image, err error) {
-	file, err := os.Open(original)
-	if err != nil {
-		return img, err
+// ScaledWithin returns a scaled version of img.
+// It scales img to FIT within width and heigth (whichever is the smallest)
+func (c ImageSvc) ScaledWithin(img image.Image, config image.Config, width, height int) (i image.Image, err error) {
+	// calculate scaling ratios
+	w, h := width, height
+	wr, hr := float32(config.Width)/float32(width), float32(config.Height)/float32(height)
+	// using whichever is smaller to fit within width, height
+	if wr > hr {
+		h = int(float32(h) / hr)
+	} else {
+		w = int(float32(w) / wr)
 	}
-	defer file.Close()
-	img, _, err = image.Decode(file)
-	if err != nil {
-		return img, err
-	}
+	return c.ScaledImage(img, w, h)
+}
+
+// ScaledImage return img scaled to width, height (as a new mage)
+func (c ImageSvc) ScaledImage(img image.Image, width, height int) (i image.Image, err error) {
 	// scale
 	toImg := image.NewRGBA64(image.Rect(0, 0, width, height))
 	err = graphics.Scale(toImg, img)

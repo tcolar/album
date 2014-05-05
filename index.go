@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"path/filepath"
 	"sort"
 )
 
@@ -42,7 +43,7 @@ func (i *Index) UpdateAll() {
 
 	dirtyAlbums := i.Cleanup(&i.root)
 	dirtyAlbums = i.UpdateAlbum(i.conf.AlbumDir, &i.root) || dirtyAlbums
-	dirtyAlbums = i.UpdateHighLights(&i.root) || dirtyAlbums
+	dirtyAlbums = i.UpdateHighLights(&i.root, "") || dirtyAlbums
 
 	// This means the album tree structure itself has changed
 	if dirtyAlbums {
@@ -93,7 +94,7 @@ func (i *Index) UpdateAlbum(dir string, album *Album) bool {
 	for _, f := range files {
 		nm := f.Name()
 		fp := path.Join(dir, nm)
-		if f.IsDir() && nm != "_thumb" {
+		if f.IsDir() && nm != "_scaled" {
 			// dir
 			child := album.Child(nm)
 			if child == nil {
@@ -140,11 +141,41 @@ func (i *Index) createScaledImages(fp string) error {
 // createThumbnail creates a thumbnail of given size in png format
 // Keep original image scale & pad with transaperency
 func (i *Index) createThumbnail(fp string, w, h int) error {
-	fname := path.Base(fp)
-	fname = fname[:len(fname)-len(path.Ext(fname))] + ".png"
-	dest := path.Join(path.Dir(fp), "_thumb", path.Base(fp))
+	dest, err := i.scaledPath(fp, "thumb", ".png")
+	if err != nil {
+		return err
+	}
 	log.Printf("scaling %s to %s", fp, dest)
-	return i.imgSvc.ResizeImageWithin(fp, dest, w, h)
+	img, err := i.imgSvc.ReadImage(fp)
+	if err != nil {
+		return err
+	}
+	config, err := i.imgSvc.ReadImageConfig(fp)
+	if err != nil {
+		return err
+	}
+	img, err = i.imgSvc.ScaledWithin(img, config, 200, 200)
+	if err != nil {
+		return err
+	}
+	/*i.imgSvc.PadImage(img, 200, 200)
+	  if err != nil {
+	    return err
+	  }*/
+	return i.imgSvc.SaveImage(img, dest)
+}
+
+// Returns the web path for a scaled image
+func (i *Index) scaledPath(fp, prefix, ext string) (patht string, err error) {
+	rel, err := filepath.Rel(i.conf.AlbumDir, fp)
+	if err != nil {
+		return "", err
+	}
+	file := filepath.Base(rel)
+	file = file[:len(file)-len(path.Ext(file))] + ext
+
+	dest := path.Join(i.conf.AlbumDir, "_scaled", prefix, filepath.Dir(rel), file)
+	return dest, nil
 }
 
 // Recursively save all albums whose content is dirty
@@ -233,14 +264,15 @@ func (i *Index) loadAlbumPics(album *Album, dir string) {
 }
 
 // Returns wether the album index s drty
-func (i *Index) UpdateHighLights(a *Album) bool {
+func (i *Index) UpdateHighLights(a *Album, dir string) bool {
 
 	dirty := false
 
 	// Recurse first since an album highlight might bubbe up.
+	dir = path.Join(dir, a.Path)
 	for c, _ := range a.Children {
 		child := &a.Children[c]
-		dirty = i.UpdateHighLights(child) || dirty
+		dirty = i.UpdateHighLights(child, dir) || dirty
 	}
 
 	if len(a.HighlightPic) > 0 && a.Pic(a.HighlightPic) != nil {
@@ -251,14 +283,14 @@ func (i *Index) UpdateHighLights(a *Album) bool {
 	// if no highlight defined return first pic of album
 	if len(a.pics) > 0 {
 		dirty = true
-		a.HighlightPic = a.pics[0].Path
+		a.HighlightPic = path.Join(dir, a.pics[0].Path)
 		return dirty
 	}
 
 	// If no images in album, return highlight of first subalbum
 	if len(a.Children) > 0 {
 		dirty = true
-		a.HighlightPic = path.Join(a.Children[0].Path, a.Children[0].HighlightPic)
+		a.HighlightPic = a.Children[0].HighlightPic
 		return dirty
 	}
 

@@ -22,7 +22,9 @@ Features:
 - "Breacrumbs" / Album navifation
 - Header / footer or "embedding" (spit out html ??)
 - Make it obvious what's an album vs what's an image ?
-- generate and serve thumbnails (say 200px?)
+* generate and serve thumbnails (say 200px?)
+- Move thumails to [root]/thumbs/ rather than spread all over the albums
+- Pad the thubmnails ?
 - generate and server scaled images (full, 500, 1000 ?)
 
 - Use an interface for all index storage ops, so could easily replace with some "real" db later

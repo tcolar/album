@@ -11,7 +11,7 @@ Features:
   - Responsive : Adapts to mobile devices and such and provides scaled images & thumbnails automatically.
   - .... TODO ....
 
-### TODO:
+### Done:
 * index albums
 * index pics
 * test indexer
@@ -20,12 +20,14 @@ Features:
 * serve album pics
 * basic web frontend to serve responsive catalog.
 * default image for albums with no / missing highlight
-- "Breacrumbs" / Album navifation
-- Header / footer or "embedding" (spit out html ??)
-- Make it obvious what's an album vs what's an image ?
 * generate and serve thumbnails (say 200px?)
 * Move thumails to [root]/thumbs/ rather than spread all over the albums
 * Pad the thubmnails ?
+
+### TODO:
+- "Breacrumbs" / Album navifation
+- Header / footer or "embedding" (spit out html ??)
+- Make it obvious what's an album vs what's an image ?
 * Do image scaling in a go routine ? (would display not yet ready albums though)
 - generate and server scaled images (full, 500, 1000 ?)
 

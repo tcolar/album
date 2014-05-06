@@ -32,7 +32,7 @@ Features:
 - Use an interface for all index "storage" ops, so could easily replace with some "real" db later
 - Sync JSON ops using channels to be concurent safe.
 
-# admin
+# Admin features
 - admin login
 - ability to update album meta (name, description, hidden etc..)
 - Update index (whole or indivual album/pics)
@@ -41,12 +41,13 @@ Features:
 - ability to reorder items
 - ability to scale images (original)
 - ability to rotate images
+- ability to delete images
 - ability to upload image or zip of images
 
-#API
+#API features
 - API's to retrieve albums & pics -> + to embed in ther site ?
 - API's to modify data ?
 
-#Other
+#Other features
 - Stats (# of views) for images ?
 

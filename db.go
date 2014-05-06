@@ -41,7 +41,8 @@ func (a Album) Pic(path string) *Pic {
 // or nil of there are no pics
 func (a Album) LatestPic() *Pic {
 	var pic *Pic
-	for _, p := range a.pics {
+	for i, _ := range a.pics {
+		p := a.pics[i]
 		if pic == nil || p.ModTime > pic.ModTime {
 			pic = &p
 		}

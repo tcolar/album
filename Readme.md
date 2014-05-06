@@ -19,6 +19,7 @@ Features:
 * list album pics
 * serve album pics
 * basic web frontend to serve responsive catalog.
+* default image for albums with no / missing highlight
 - "Breacrumbs" / Album navifation
 - Header / footer or "embedding" (spit out html ??)
 - Make it obvious what's an album vs what's an image ?

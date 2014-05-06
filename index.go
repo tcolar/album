@@ -81,9 +81,6 @@ func (i *Index) UpdateAlbum(dir string, album *Album) bool {
 
 	dirty := false
 
-	// TODO highlight
-	//: highlight := ""
-
 	// Recurse into subalbums
 	files, _ := ioutil.ReadDir(dir)
 	var mostRecentPicTs int64 = 0
@@ -102,7 +99,7 @@ func (i *Index) UpdateAlbum(dir string, album *Album) bool {
 				child = &Album{
 					Path:         nm,
 					Name:         nm,
-					HighlightPic: "", // TODO
+					HighlightPic: "",
 				}
 				dirty = i.UpdateAlbum(fp, child) || dirty
 				album.Children = append(album.Children, *child)
@@ -135,6 +132,7 @@ func (i *Index) UpdateAlbum(dir string, album *Album) bool {
 
 //  createScaledImages creates scaled down version of the images (thumbnails etc..)
 func (i *Index) createScaledImages(fp string) error {
+	log.Printf("Creating scaled images for %s", fp)
 	return i.createThumbnail(fp, 200, 200)
 }
 
@@ -145,23 +143,18 @@ func (i *Index) createThumbnail(fp string, w, h int) error {
 	if err != nil {
 		return err
 	}
-	log.Printf("scaling %s to %s", fp, dest)
 	img, err := i.imgSvc.ReadImage(fp)
 	if err != nil {
 		return err
 	}
-	config, err := i.imgSvc.ReadImageConfig(fp)
+	img, err = i.imgSvc.ScaledWithin(img, 200, 200)
 	if err != nil {
 		return err
 	}
-	img, err = i.imgSvc.ScaledWithin(img, config, 200, 200)
+	img, err = i.imgSvc.PadImage(img, 200, 200)
 	if err != nil {
 		return err
 	}
-	/*i.imgSvc.PadImage(img, 200, 200)
-	  if err != nil {
-	    return err
-	  }*/
 	return i.imgSvc.SaveImage(img, dest)
 }
 
@@ -180,7 +173,6 @@ func (i *Index) scaledPath(fp, prefix, ext string) (patht string, err error) {
 
 // Recursively save all albums whose content is dirty
 func (i *Index) saveDirtyAlbums(album *Album, dir string) {
-	log.Printf("sda %s", dir)
 	if album.dirty {
 		// Sort them before saving
 		sort.Sort(album.pics)
@@ -283,7 +275,9 @@ func (i *Index) UpdateHighLights(a *Album, dir string) bool {
 	// if no highlight defined return first pic of album
 	if len(a.pics) > 0 {
 		dirty = true
-		a.HighlightPic = path.Join(dir, a.pics[0].Path)
+		p := a.pics[0].Path
+		nm := p[:len(p)-len(filepath.Ext(p))] + ".png"
+		a.HighlightPic = path.Join(dir, nm)
 		return dirty
 	}
 

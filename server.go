@@ -5,6 +5,7 @@ package album
 import (
 	"net/http"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/go-martini/martini"
@@ -13,7 +14,7 @@ import (
 
 // temp test config mock-up
 var conf = AlbumConfig{
-	AlbumDir: "/home/tcolar/albums/",
+	AlbumDir: "/home/tcolar/albums/2005/",
 }
 
 func Run() {
@@ -57,9 +58,11 @@ func Run() {
 				albums = append(albums, a)
 			}
 			for _, p := range album.pics {
+				nm := p.Path[:len(p.Path)-len(filepath.Ext(p.Path))] + ".png"
 				pics = append(pics, []string{
-					path.Join(req.URL.Path, p.Name),
-					path.Join("/_scaled", "thumb", req.URL.Path, p.Name)})
+					path.Join(req.URL.Path, p.Path),
+					path.Join("/_scaled", "thumb", req.URL.Path, nm),
+				})
 			}
 		}
 		data := map[string]interface{}{

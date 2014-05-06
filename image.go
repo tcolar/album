@@ -3,6 +3,7 @@ package album
 import (
 	"fmt"
 	"image"
+	"image/draw"
 	"image/gif"
 	"image/jpeg"
 	"image/png"
@@ -22,8 +23,21 @@ type ImageSvc struct {
 
 // Pad the image with transparency
 // Creates a transparent image of width*heigth size with img centered in the center.
-//func (c ImageSvc) PadImage(width, height int, img image.Image) (img image.Image, err error) {
-//}
+// Note that if the image if larger that width, heigth it will get cropped.
+func (c ImageSvc) PadImage(img image.Image, width, height int) (i image.Image, err error) {
+	padded := image.NewRGBA(image.Rect(0, 0, width, height))
+	// DrawMask aligns r.Min in dst with sp in src and mp in mask and then replaces the rectangle r
+	// in dst with the result of a Porter-Duff composition. A nil mask is treated as opaque.
+	pt := image.Point{
+		X: 0,
+		Y: 0,
+	}
+	x := (width - img.Bounds().Dx()) / 2
+	y := (height - img.Bounds().Dy()) / 2
+	rect := image.Rect(x, y, x+img.Bounds().Dx(), y+img.Bounds().Dy())
+	draw.Draw(padded, rect, img, pt, draw.Src)
+	return padded, nil
+}
 
 // ReadImage eads an image from file
 func (c ImageSvc) ReadImage(imgPath string) (img image.Image, err error) {
@@ -106,15 +120,17 @@ func (c ImageSvc) SaveGif(img image.Image, filePath string, options *gif.Options
 
 // ScaledWithin returns a scaled version of img.
 // It scales img to FIT within width and heigth (whichever is the smallest)
-func (c ImageSvc) ScaledWithin(img image.Image, config image.Config, width, height int) (i image.Image, err error) {
+func (c ImageSvc) ScaledWithin(img image.Image, width, height int) (i image.Image, err error) {
 	// calculate scaling ratios
-	w, h := width, height
-	wr, hr := float32(config.Width)/float32(width), float32(config.Height)/float32(height)
+	w, h := img.Bounds().Dx(), img.Bounds().Dy()
+	wr, hr := float32(w)/float32(width), float32(h)/float32(height)
 	// using whichever is smaller to fit within width, height
 	if wr > hr {
-		h = int(float32(h) / hr)
+		h = int(float32(h) / wr)
+		w = width
 	} else {
-		w = int(float32(w) / wr)
+		w = int(float32(w) / hr)
+		h = height
 	}
 	return c.ScaledImage(img, w, h)
 }
@@ -122,7 +138,7 @@ func (c ImageSvc) ScaledWithin(img image.Image, config image.Config, width, heig
 // ScaledImage return img scaled to width, height (as a new mage)
 func (c ImageSvc) ScaledImage(img image.Image, width, height int) (i image.Image, err error) {
 	// scale
-	toImg := image.NewRGBA64(image.Rect(0, 0, width, height))
+	toImg := image.NewRGBA(image.Rect(0, 0, width, height))
 	err = graphics.Scale(toImg, img)
 	if err != nil {
 		return toImg, err

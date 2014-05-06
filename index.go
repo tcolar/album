@@ -116,7 +116,7 @@ func (i *Index) UpdateAlbum(dir string, album *Album) bool {
 					Name:    f.Name(),
 					ModTime: ts,
 				}
-				// TODO: start those in a sigle background go routine / queue (channel)
+				// TODO: start those in a single background go routine / queue (channel) ?
 				err := i.createScaledImages(fp)
 				if err != nil {
 					log.Print(err)
@@ -174,6 +174,7 @@ func (i *Index) scaledPath(fp, prefix, ext string) (patht string, err error) {
 // Recursively save all albums whose content is dirty
 func (i *Index) saveDirtyAlbums(album *Album, dir string) {
 	if album.dirty {
+		log.Printf("sda %s %s", dir, album.Path)
 		// Sort them before saving
 		sort.Sort(album.pics)
 		i.saveAlbumPics(album, dir)

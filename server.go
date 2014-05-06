@@ -14,7 +14,7 @@ import (
 
 // temp test config mock-up
 var conf = AlbumConfig{
-	AlbumDir: "/home/tcolar/albums/2005/",
+	AlbumDir: "/home/tcolar/albums/",
 }
 
 func Run() {

@@ -17,7 +17,7 @@ import (
 
 var ImageExts = []string{".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff"}
 
-// Serving Images (With caching + resizing)
+// Image service : Reads, saves, scales images and more.
 type ImageSvc struct {
 }
 

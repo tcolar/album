@@ -4,11 +4,11 @@
 Work In Progress, not usable yet.
 *********************************
 
-A lightweight standalone photo gallery server.
+A lightweight standalone photo gallery server & image processor.
 
 Features:
   - Lightweight, based flat files. No database or complex setup needed.
-  - Responsive : Adapts to mobile devices and such and provides scaled images automatically.
+  - Responsive : Adapts to mobile devices and such and provides scaled images & thumbnails automatically.
   - .... TODO ....
 
 ### TODO:
@@ -24,12 +24,13 @@ Features:
 - Header / footer or "embedding" (spit out html ??)
 - Make it obvious what's an album vs what's an image ?
 * generate and serve thumbnails (say 200px?)
-- Move thumails to [root]/thumbs/ rather than spread all over the albums
-- Pad the thubmnails ?
+* Move thumails to [root]/thumbs/ rather than spread all over the albums
+* Pad the thubmnails ?
+* Do image scaling in a go routine ? (would display not yet ready albums though)
 - generate and server scaled images (full, 500, 1000 ?)
 
-- Use an interface for all index storage ops, so could easily replace with some "real" db later
-- Sync JSON ops using chnannels to be concurent safe.
+- Use an interface for all index "storage" ops, so could easily replace with some "real" db later
+- Sync JSON ops using channels to be concurent safe.
 
 # admin
 - admin login

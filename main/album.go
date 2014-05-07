@@ -2,12 +2,24 @@
 
 package main
 
-import "github.com/tcolar/album"
+import (
+	"log"
+	"os"
+
+	"github.com/tcolar/album"
+)
 
 func main() {
-	conf := album.AlbumConfig{
-		AlbumDir: "/home/tcolar/albums/",
+
+	//api := flag.Bool("api", true, "Enable API")
+
+	if len(os.Args) < 2 {
+		log.Fatal("Expected album directory as first parameter.")
 	}
-	s := album.Server{Conf: conf}
+
+	conf := album.AlbumConfig{
+		AlbumDir: os.Args[1],
+	}
+	s := album.NewServer(conf)
 	s.Run()
 }

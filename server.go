@@ -12,6 +12,12 @@ import (
 	"github.com/martini-contrib/render"
 )
 
+func NewServer(conf AlbumConfig) *Server {
+	return &Server{
+		Conf: conf,
+	}
+}
+
 type Server struct {
 	Conf  AlbumConfig
 	index *Index

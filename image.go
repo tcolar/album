@@ -7,6 +7,7 @@ import (
 	"image/gif"
 	"image/jpeg"
 	"image/png"
+	"math"
 	"os"
 	"path"
 	"path/filepath"
@@ -135,11 +136,24 @@ func (c ImageSvc) ScaledWithin(img image.Image, width, height int) (i image.Imag
 	return c.ScaledImage(img, w, h)
 }
 
-// ScaledImage return img scaled to width, height (as a new mage)
+// ScaledImage return a new image made of img scaled to width, height
 func (c ImageSvc) ScaledImage(img image.Image, width, height int) (i image.Image, err error) {
 	// scale
 	toImg := image.NewRGBA(image.Rect(0, 0, width, height))
 	err = graphics.Scale(toImg, img)
+	if err != nil {
+		return toImg, err
+	}
+	return toImg, err
+}
+
+// Rotated returns a new image made from rotating ig by n degrees
+// Sensible degree values are 90, 180, 270
+func (c ImageSvc) Rotated(img image.Image, degrees int) (i image.Image, err error) {
+	angle := math.Pi / 180.0 * float64(degrees)
+	toImg := image.NewRGBA(image.Rect(0, 0, img.Bounds().Dy(), img.Bounds().Dx()))
+
+	err = graphics.Rotate(toImg, img, &graphics.RotateOptions{Angle: angle})
 	if err != nil {
 		return toImg, err
 	}

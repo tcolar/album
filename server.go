@@ -12,17 +12,18 @@ import (
 	"github.com/martini-contrib/render"
 )
 
-// temp test config mock-up
-var conf = AlbumConfig{
-	AlbumDir: "/home/tcolar/albums/",
+type Server struct {
+	Conf  AlbumConfig
+	index *Index
 }
 
-func Run() {
+func (s *Server) Run() {
 
-	index, err := NewIndex(&conf)
+	index, err := NewIndex(&s.Conf)
 	if err != nil {
 		panic(err)
 	}
+	s.index = index
 
 	// Index all albums & images asynchronously
 	go index.UpdateAll()
@@ -30,47 +31,51 @@ func Run() {
 	m := martini.Classic()
 	m.Use(render.Renderer())
 
-	root := conf.AlbumDir
+	root := s.Conf.AlbumDir
 
 	// To serve pictures
 	// TODO: Protect json files ?
 	m.Use(martini.Static(root, martini.StaticOptions{}))
 
 	m.Get("/**", func(r render.Render, req *http.Request, res http.ResponseWriter) {
-
-		albums := []Album{}
-		pics := [][]string{}
-
-		parts := strings.Split(req.URL.Path, "/")
-		album := &index.root
-		for _, p := range parts {
-			if len(p) == 0 {
-				continue
-			}
-			album = album.Child(p)
-			if album == nil {
-				break
-			}
-		}
-
-		if album != nil {
-			for _, a := range album.Children {
-				albums = append(albums, a)
-			}
-			for _, p := range album.pics {
-				nm := p.Path[:len(p.Path)-len(filepath.Ext(p.Path))] + ".png"
-				pics = append(pics, []string{
-					path.Join(req.URL.Path, p.Path),
-					path.Join("/_scaled", "thumb", req.URL.Path, nm),
-				})
-			}
-		}
-		data := map[string]interface{}{
-			"albums": albums,
-			"pics":   pics,
-		}
-		r.HTML(200, "home", data)
+		s.servePics(r, req, res)
 	})
 
 	m.Run()
+}
+
+func (s *Server) servePics(r render.Render, req *http.Request, res http.ResponseWriter) {
+
+	albums := []Album{}
+	pics := [][]string{}
+
+	parts := strings.Split(req.URL.Path, "/")
+	album := &s.index.root
+	for _, p := range parts {
+		if len(p) == 0 {
+			continue
+		}
+		album = album.Child(p)
+		if album == nil {
+			break
+		}
+	}
+
+	if album != nil {
+		for _, a := range album.Children {
+			albums = append(albums, a)
+		}
+		for _, p := range album.pics {
+			nm := p.Path[:len(p.Path)-len(filepath.Ext(p.Path))] + ".png"
+			pics = append(pics, []string{
+				path.Join(req.URL.Path, p.Path),
+				path.Join("/_scaled", "thumb", req.URL.Path, nm),
+			})
+		}
+	}
+	data := map[string]interface{}{
+		"albums": albums,
+		"pics":   pics,
+	}
+	r.HTML(200, "home", data)
 }

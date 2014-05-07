@@ -5,5 +5,9 @@ package main
 import "github.com/tcolar/album"
 
 func main() {
-	album.Run()
+	conf := album.AlbumConfig{
+		AlbumDir: "/home/tcolar/albums/",
+	}
+	s := album.Server{Conf: conf}
+	s.Run()
 }

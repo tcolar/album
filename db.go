@@ -12,7 +12,7 @@ type Album struct {
 	Hidden       bool   // wether that album/folder should be hidden
 	Children     []Album
 
-	// Not serialized along with album structure (serialized separaetely)
+	// Not serialized along with album structure (serialized separately)
 	pics  Pics
 	dirty bool // Wheter the album content is "dirty" (pics changed)
 }
@@ -27,7 +27,7 @@ func (a Album) Child(path string) *Album {
 	return nil
 }
 
-// Find a picture of the album by path
+// Pic finds a picture of the album by path
 func (a Album) Pic(path string) *Pic {
 	for _, pic := range a.pics {
 		if pic.Path == path {
@@ -37,7 +37,7 @@ func (a Album) Pic(path string) *Pic {
 	return nil
 }
 
-// Return the pic with the most recent ModTime
+// LatestPic returns the pic with the most recent ModTime
 // or nil of there are no pics
 func (a Album) LatestPic() *Pic {
 	var pic *Pic

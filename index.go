@@ -109,7 +109,7 @@ func (i *Index) UpdateAlbum(dir string, album *Album) bool {
 		} else {
 			// file
 			ts := f.ModTime().Unix()
-			if IsImage(f) && ts > mostRecentPicTs {
+			if i.imgSvc.IsImage(f) && ts > mostRecentPicTs {
 				album.dirty = true
 				pic := Pic{
 					Path:    f.Name(),
@@ -133,32 +133,14 @@ func (i *Index) UpdateAlbum(dir string, album *Album) bool {
 //  createScaledImages creates scaled down version of the images (thumbnails etc..)
 func (i *Index) createScaledImages(fp string) error {
 	log.Printf("Creating scaled images for %s", fp)
-	return i.createThumbnail(fp, 200, 200)
-}
-
-// createThumbnail creates a thumbnail of given size in png format
-// Keep original image scale & pad with transaperency
-func (i *Index) createThumbnail(fp string, w, h int) error {
 	dest, err := i.scaledPath(fp, "thumb", ".png")
 	if err != nil {
 		return err
 	}
-	img, err := i.imgSvc.ReadImage(fp)
-	if err != nil {
-		return err
-	}
-	img, err = i.imgSvc.ScaledWithin(img, 200, 200)
-	if err != nil {
-		return err
-	}
-	img, err = i.imgSvc.PadImage(img, 200, 200)
-	if err != nil {
-		return err
-	}
-	return i.imgSvc.SaveImage(img, dest)
+	return i.imgSvc.CreateThumbnail(fp, dest, 200, 200)
 }
 
-// Returns the web path for a scaled image
+// Returns the web path of a scaled image
 func (i *Index) scaledPath(fp, prefix, ext string) (patht string, err error) {
 	rel, err := filepath.Rel(i.conf.AlbumDir, fp)
 	if err != nil {

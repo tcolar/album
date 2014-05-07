@@ -22,6 +22,35 @@ var ImageExts = []string{".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff"}
 type ImageSvc struct {
 }
 
+// CreateThumbnail creates a thumbnail of given size in png format
+// Keeps the original image scale & pad with transparency
+func (c ImageSvc) CreateThumbnail(originalPath, destPath string, w, h int) error {
+	img, err := c.ReadImage(originalPath)
+	if err != nil {
+		return err
+	}
+	img, err = c.ScaledWithin(img, 200, 200)
+	if err != nil {
+		return err
+	}
+	img, err = c.PadImage(img, 200, 200)
+	if err != nil {
+		return err
+	}
+	return c.SaveImage(img, destPath)
+}
+
+// IsImage quickly checks if a file looks like an image looking at the file extension.
+func (c ImageSvc) IsImage(f os.FileInfo) bool {
+	ext := strings.ToLower(filepath.Ext(f.Name()))
+	for _, e := range ImageExts {
+		if e == ext {
+			return true
+		}
+	}
+	return false
+}
+
 // Pad the image with transparency
 // Creates a transparent image of width*heigth size with img centered in the center.
 // Note that if the image if larger that width, heigth it will get cropped.
@@ -49,6 +78,32 @@ func (c ImageSvc) ReadImage(imgPath string) (img image.Image, err error) {
 	defer file.Close()
 	img, _, err = image.Decode(file)
 	return img, err
+}
+
+// Rotate rotates the image of path fp and saves it under dest.
+func (c ImageSvc) Rotate(fp, dest string, degrees int) (err error) {
+	img, err := c.ReadImage(fp)
+	if err != nil {
+		return err
+	}
+	img, err = c.Rotated(img, degrees)
+	if err != nil {
+		return err
+	}
+	return c.SaveImage(img, dest)
+}
+
+// Rotated returns a new image made from rotating ig by n degrees
+// Sensible degree values are 90, 180, 270
+func (c ImageSvc) Rotated(img image.Image, degrees int) (i image.Image, err error) {
+	angle := math.Pi / 180.0 * float64(degrees)
+	toImg := image.NewRGBA(image.Rect(0, 0, img.Bounds().Dy(), img.Bounds().Dx()))
+
+	err = graphics.Rotate(toImg, img, &graphics.RotateOptions{Angle: angle})
+	if err != nil {
+		return toImg, err
+	}
+	return toImg, err
 }
 
 // ReadImageConfig reads the image config from file
@@ -145,28 +200,4 @@ func (c ImageSvc) ScaledImage(img image.Image, width, height int) (i image.Image
 		return toImg, err
 	}
 	return toImg, err
-}
-
-// Rotated returns a new image made from rotating ig by n degrees
-// Sensible degree values are 90, 180, 270
-func (c ImageSvc) Rotated(img image.Image, degrees int) (i image.Image, err error) {
-	angle := math.Pi / 180.0 * float64(degrees)
-	toImg := image.NewRGBA(image.Rect(0, 0, img.Bounds().Dy(), img.Bounds().Dx()))
-
-	err = graphics.Rotate(toImg, img, &graphics.RotateOptions{Angle: angle})
-	if err != nil {
-		return toImg, err
-	}
-	return toImg, err
-}
-
-// IsImage quickly checks if a file looks like an image looking at the file extension.
-func IsImage(f os.FileInfo) bool {
-	ext := strings.ToLower(filepath.Ext(f.Name()))
-	for _, e := range ImageExts {
-		if e == ext {
-			return true
-		}
-	}
-	return false
 }

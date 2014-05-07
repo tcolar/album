@@ -3,6 +3,8 @@
 package album
 
 import (
+	"fmt"
+	"log"
 	"net/http"
 	"path"
 	"path/filepath"
@@ -47,7 +49,8 @@ func (s *Server) Run() {
 		s.servePics(r, req, res)
 	})
 
-	m.Run()
+	log.Printf("Starting on port %d", s.Conf.Port)
+	http.ListenAndServe(fmt.Sprintf(":%d", s.Conf.Port), m)
 }
 
 func (s *Server) servePics(r render.Render, req *http.Request, res http.ResponseWriter) {

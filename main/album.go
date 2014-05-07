@@ -3,6 +3,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"os"
 
@@ -11,14 +12,17 @@ import (
 
 func main() {
 
-	//api := flag.Bool("api", true, "Enable API")
+	port := flag.Int("port", 3000, "Web service port")
 
 	if len(os.Args) < 2 {
 		log.Fatal("Expected album directory as first parameter.")
 	}
 
+	flag.Parse()
+
 	conf := album.AlbumConfig{
 		AlbumDir: os.Args[1],
+		Port:     *port,
 	}
 	s := album.NewServer(conf)
 	s.Run()

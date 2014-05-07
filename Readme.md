@@ -4,12 +4,15 @@
 Work In Progress, not usable yet.
 *********************************
 
-A lightweight standalone photo gallery server & image processor.
+A simple standalone photo gallery server & image processor.
 
 Features:
-  - Lightweight, based flat files. No database or complex setup needed.
-  - Responsive : Adapts to mobile devices and such and provides scaled images & thumbnails automatically.
-  - .... TODO ....
+  * Lightweight, based on flat files and in memory. No database or complex setup needed (for now).
+  * Responsive : Adapts to mobile devices and such and provides scaled images & thumbnails automatically.
+  * Albums & images with meta data and ordering
+  * Image Scaling / Rotating / Padding service
+  - Built-in admin API to manage content
+  - REST API to use image server and content from external systems.
 
 ### Done:
 * index albums
@@ -22,32 +25,38 @@ Features:
 * default image for albums with no / missing highlight
 * generate and serve thumbnails (say 200px?)
 * Move thumails to [root]/thumbs/ rather than spread all over the albums
-* Pad the thubmnails ?
+* Pad the thubmnails
+* Test Indexer basics
 
 ### TODO:
-- "Breacrumbs" / Album navifation
-- Header / footer or "embedding" (spit out html ??)
-- Make it obvious what's an album vs what's an image ?
-* Do image scaling in a go routine ? (would display not yet ready albums though)
-- generate and server scaled images (full, 500, 1000 ?)
-
+- 1) "Breacrumbs" / Album navigation
+- 2) Header / footer or "embedding" (spit out html ??)
+- 2) Make it obvious what's an album vs what's an image ?
+- 2) generate and server scaled images (full, 500, 1000 ?)
+- 3) ability to scale images (original)
+- Do image scaling in a go routine ? (would display not yet ready albums though)
 - Use an interface for all index "storage" ops, so could easily replace with some "real" db later
 - Sync JSON ops using channels to be concurent safe.
 
+### TESTING :
+- Test indexer changes / updates
+- Test mage processing ? hum might be tricky excecpt maybe test against pre-made test images ?
+- Test admin serices
+- Test API's
+
 # Admin features
-- admin login
-- ability to update album meta (name, description, hidden etc..)
-- Update index (whole or indivual album/pics)
+- 1) admin login / at least basic API Auth
+- 2) ability to rotate images
+- 2) ability to delete images
+- 2) Update index (whole or indivual album/pics)
+- 3) ability to select highlight
+- 3) ability to update album meta (name, description, hidden etc..)
+- 3) ability to reorder items
 - implement hiiden albums & pics -> still can be accesed if no url ?? -> can be seen in json file !!
-- ability to select highlight
-- ability to reorder items
-- ability to scale images (original)
-- ability to rotate images
-- ability to delete images
 - ability to upload image or zip of images
 
 #API features
-- API's to retrieve albums & pics -> + to embed in ther site ?
+- API's to retrieve albums & pics -> + to embed in other site ?
 - API's to modify data ?
 
 #Other features

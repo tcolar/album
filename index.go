@@ -39,7 +39,7 @@ func NewIndex(conf *AlbumConfig) (indexer *Index, err error) {
 // For new & updated pictures it will also create scaled down versions & thumbnails
 func (i *Index) UpdateAll() {
 
-	log.Print("Starting index update.")
+	log.Print("Starting index update : %s", i.conf.AlbumDir)
 
 	dirtyAlbums := i.Cleanup(&i.root)
 	dirtyAlbums = i.UpdateAlbum(i.conf.AlbumDir, &i.root) || dirtyAlbums
@@ -78,7 +78,6 @@ func (i *Index) Cleanup(album *Album) bool {
 // UpdateAlbum rescursively scans the album file system and update the index.
 // Returns wether the album structure chnaged (new/removed albums)
 func (i *Index) UpdateAlbum(dir string, album *Album) bool {
-
 	dirty := false
 
 	// Recurse into subalbums

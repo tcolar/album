@@ -23,13 +23,18 @@
 <div class="container">
 <ul class="clearing-thumbs" data-clearing>
 {{range .pics}}
-  <li><a href="{{index . 0}}"><img src="{{index . 1}}"></a></li>
+  <li>
+    <a href="{{index . 0}}">
+        <img src="{{index . 1}}">
+    </a>
+  </li>
 {{end}}
 </ul>
 </div>
 
 
 <script src="/js/vendor/jquery.js"></script>
+<script src="/js/picturefill.min.js"></script>
 <script src="/js/foundation.min.js"></script>
 <script src="/js/foundation/foundation.clearing.js"></script>
 <script src="/js/foundation/foundation.topbar.js"></script>

@@ -27,16 +27,21 @@ Features:
 * Move thumails to [root]/thumbs/ rather than spread all over the albums
 * Pad the thubmnails
 * Test Indexer basics
+* Admin login / Very basic API Auth
 
 ### TODO:
 - 1) "Breacrumbs" / Album navigation
 - 2) Header / footer or "embedding" (spit out html ??)
 - 2) Make it obvious what's an album vs what's an image ?
-- 2) generate and server scaled images (full, 500, 1000 ?)
+- 2) generate and server scaled images (full/1440 - 1000 - 600) + 200 for thumbnail
+  use https://github.com/scottjehl/picturefill ?
 - 3) ability to scale images (original)
 - Do image scaling in a go routine ? (would display not yet ready albums though)
 - Use an interface for all index "storage" ops, so could easily replace with some "real" db later
 - Sync JSON ops using channels to be concurent safe.
+
+- Auth : Have a password in a config file or such
+- Auth : Secure cookie store id
 
 ### TESTING :
 - Test indexer changes / updates
@@ -45,7 +50,6 @@ Features:
 - Test API's
 
 # Admin features
-- 1) admin login / at least basic API Auth
 - 2) ability to rotate images
 - 2) ability to delete images
 - 2) Update index (whole or indivual album/pics)

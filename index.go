@@ -9,8 +9,6 @@ import (
 	"path/filepath"
 )
 
-// TODO: Use channels to write json files
-
 type Index struct {
 	conf   *AlbumConfig
 	imgSvc ImageSvc
@@ -171,7 +169,7 @@ func (i *Index) createScaledImages(fp string) error {
 	return i.imgSvc.CreateThumbnail(fp, dest, 200, 200)
 }
 
-// Returns the web path of a scaled image
+// scaledPath returns the web path of a scaled image
 func (i *Index) scaledPath(fp, prefix, ext string) (patht string, err error) {
 	rel, err := filepath.Rel(i.conf.AlbumDir, fp)
 	if err != nil {
@@ -184,7 +182,7 @@ func (i *Index) scaledPath(fp, prefix, ext string) (patht string, err error) {
 	return dest, nil
 }
 
-// Recursively make sure all albums have an highlight
+// UpdateHighLights recursively make sure all albums have an highlight
 func (i *Index) UpdateHighLights(a *Album) {
 	log.Printf("UH %s", a.Id)
 

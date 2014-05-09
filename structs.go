@@ -19,40 +19,6 @@ func (a Album) Pics() []Pic {
 	return []Pic{} // TODO
 }
 
-/*
-// Album return a child album album by path, or nil if none found.
-func (a Album) Child(path string) *Album {
-  for _, child := range a.Children {
-    if child.Path == path {
-      return &child
-    }
-  }
-  return nil
-}
-
-// Pic finds a picture of the album by path
-func (a Album) Pic(path string) *Pic {
-  for _, pic := range a.pics {
-    if pic.Path == path {
-      return &pic
-    }
-  }
-  return nil
-}
-
-// LatestPic returns the pic with the most recent ModTime
-// or nil of there are no pics
-func (a Album) LatestPic() *Pic {
-  var pic *Pic
-  for i, _ := range a.pics {
-    p := a.pics[i]
-    if pic == nil || p.ModTime > pic.ModTime {
-      pic = &p
-    }
-  }
-  return pic
-}*/
-
 // Collection of picture with sorting. Sorts the pics by sorting, path
 type Pics []Pic
 

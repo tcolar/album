@@ -3,6 +3,7 @@
 package album
 
 // Storer, stores and retrieves the album & pics metadata somewhere (say a DB or such)
+// Implementation could be a SQL DB, a k/V stores or whatever else.
 type Storer interface {
 	// GetRoot returns the root album (nil if none)
 	GetRoot() (*Album, error)

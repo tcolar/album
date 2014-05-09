@@ -28,6 +28,8 @@ Features:
 * Pad the thubmnails
 * Test Indexer basics
 * Admin login / Very basic API Auth
+* Make index store swappable (interface)
+* Impement index store using KV store.
 
 ### TODO:
 - 1) "Breacrumbs" / Album navigation
@@ -36,6 +38,7 @@ Features:
 - 2) generate and server scaled images (full/1440 - 1000 - 600) + 200 for thumbnail
   use https://github.com/scottjehl/picturefill ?
 - 3) ability to scale images (original)
+- Make file store an interface too so could substitute file system for any other io impl.
 - Do image scaling in a go routine ? (would display not yet ready albums though)
 - Use an interface for all index "storage" ops, so could easily replace with some "real" db later
 - Sync JSON ops using channels to be concurent safe.

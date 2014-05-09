@@ -103,23 +103,22 @@ func (s *Server) servePics(r render.Render, req *http.Request, res http.Response
 	pics := [][]string{}
 
 	parts := strings.Split(req.URL.Path, "/")
-	id := path.Join(parts...)
-	log.Print(id)
+	id := fmt.Sprintf("/%s", path.Join(parts...))
+	log.Printf("Id: %s", id)
 	album, err := s.index.store.GetAlbum(id)
 	if err != nil {
 		log.Fatalf("Failed to get album. %v", err)
 	}
-	log.Print(album)
 
 	if album != nil {
-		for _, a := range s.index.SubAlbums(album) {
+		for _, a := range s.index.subAlbums(album) {
 			albums = append(albums, a)
 		}
-		for _, p := range s.index.AlbumPics(album) {
+		for _, p := range s.index.albumPics(album) {
 			nm := p.Path[:len(p.Path)-len(filepath.Ext(p.Path))] + ".png"
 			pics = append(pics, []string{
-				path.Join(req.URL.Path, p.Path),
-				path.Join("/_scaled", "thumb", req.URL.Path, nm),
+				p.Path,
+				path.Join("/_scaled", "thumb", nm),
 			})
 		}
 	}

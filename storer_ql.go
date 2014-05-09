@@ -3,7 +3,9 @@
 package album
 
 import (
+	"fmt"
 	"os"
+	"strings"
 
 	"log"
 
@@ -11,12 +13,13 @@ import (
 	"labix.org/v2/mgo/bson"
 )
 
-// KvStorer : Implementation of storer interface using the KV key/value store.
-// Structures are serialized to bson.
+// KvStorer : Implementation of album.Storer interface backed by KV key/value store.
+// Values are structures serialized to bson.
 type KvStorer struct {
 	db *kv.DB
 }
 
+// NewKvStorer constructor for a KV stored back Storer implememtation
 func NewKvStorer(dbPath string) (*KvStorer, error) {
 	var db *kv.DB
 	var err error
@@ -33,8 +36,8 @@ func NewKvStorer(dbPath string) (*KvStorer, error) {
 	}, nil
 }
 
-func (s *KvStorer) GetRoot() (album *Album, e error) {
-	key := []byte(rootName)
+func (s *KvStorer) GetRoot() (*Album, error) {
+	key := []byte(s.albumKey(rootName))
 	root, err := s.GetAlbum(rootName)
 	if err != nil {
 		return nil, err
@@ -51,8 +54,9 @@ func (s *KvStorer) GetRoot() (album *Album, e error) {
 	return root, nil
 }
 
-func (s *KvStorer) GetAlbum(id string) (album *Album, e error) {
-	bytes, err := s.db.Get([]byte(id), nil)
+func (s *KvStorer) GetAlbum(id string) (*Album, error) {
+	// Get is (value, key) while Set is (key, value) >:<
+	bytes, err := s.db.Get(nil, []byte(s.albumKey(id)))
 	if err != nil {
 		return nil, err
 	}
@@ -67,33 +71,94 @@ func (s *KvStorer) UpdateAlbum(album *Album) error {
 	if err != nil {
 		return err
 	}
-	log.Printf("%s -> %v", album.Id, bytes)
-	return s.db.Set([]byte(album.Id), bytes)
+	return s.db.Set([]byte(s.albumKey(album.Id)), bytes)
 }
 
 func (s *KvStorer) DelAlbum(id string) error {
-	return nil // TODO
+	// recurse in subalbums
+	subAlbums, err := s.GetAlbums(id)
+	if err != nil {
+		return err
+	}
+	for _, sub := range subAlbums {
+		s.DelAlbum(sub.Id)
+	}
+	// delete album pics
+	pics, err := s.GetAlbumPics(id)
+	if err != nil {
+		return err
+	}
+	for _, pic := range pics {
+		s.DelPic(pic.Id)
+	}
+	// remove album itself
+	return s.db.Delete([]byte(s.albumKey(id)))
 }
 
-func (s *KvStorer) GetAlbums(id string) (albums []Album, err error) {
-	return []Album{}, nil // TODO
+func (s *KvStorer) GetAlbums(id string) ([]Album, error) {
+	enum, _, err := s.db.Seek([]byte(s.albumKey(id)))
+	if err != nil {
+		return nil, err
+	}
+	albums := []Album{}
+	k, v, e := enum.Next()
+	key := string(k)
+	kid := s.albumKey(id)
+	for ; e == nil && strings.HasPrefix(key, kid); k, v, e = enum.Next() {
+		key = string(k)
+		if key == id {
+			continue // First key will be the album itself, skipping it
+		}
+		album, err := s.decAlbum(v)
+		if err == nil && album.ParentId == id {
+			albums = append(albums, *album)
+		}
+	}
+	return albums, nil
 }
 
-func (s *KvStorer) GetAlbumPics(id string) (pics []Pic, e error) {
-	return []Pic{}, nil // TODO
+func (s *KvStorer) GetAlbumPics(id string) ([]Pic, error) {
+	enum, _, err := s.db.Seek([]byte(s.picKey(id)))
+	if err != nil {
+		return nil, err
+	}
+	pics := []Pic{}
+	k, v, e := enum.Next()
+	key := string(k)
+	kid := s.picKey(id)
+	for ; e == nil && strings.HasPrefix(key, kid); k, v, e = enum.Next() {
+		key = string(k)
+		pic, err := s.decPic(v)
+		if err == nil && pic.AlbumId == id {
+			pics = append(pics, *pic)
+		}
+	}
+	return pics, nil
 }
 
-func (s *KvStorer) GetPic(id string) (pic *Pic, e error) {
-	return &Pic{}, nil // TODO
+func (s *KvStorer) GetPic(id string) (*Pic, error) {
+	// Get is (value, key) while Set is (key, value) >:<
+	bytes, err := s.db.Get(nil, []byte(s.picKey(id)))
+	if err != nil {
+		return nil, err
+	}
+	return s.decPic(bytes)
 }
+
 func (s *KvStorer) CreatePic(pic *Pic) error {
-	return nil // TODO
+	return s.UpdatePic(pic)
 }
+
 func (s *KvStorer) UpdatePic(pic *Pic) error {
-	return nil // TODO
+	bytes, err := s.encPic(pic)
+	if err != nil {
+		return err
+	}
+	return s.db.Set([]byte(s.picKey(pic.Id)), bytes)
 }
+
 func (s *KvStorer) DelPic(id string) error {
-	return nil // TODO
+	return s.db.Delete([]byte(s.picKey(id)))
 }
 
 func (s *KvStorer) Shutdown() error {
@@ -129,6 +194,16 @@ func (s *KvStorer) decPic(bytes []byte) (*Pic, error) {
 	pic := &Pic{}
 	err := bson.Unmarshal(bytes, pic)
 	return pic, err
+}
+
+// albumKey  :Internal KV store album key ("A:key")
+func (s *KvStorer) albumKey(key string) string {
+	return fmt.Sprintf("A:%s", key)
+}
+
+// albumKey  :Internal KV store pic key ("I:key")
+func (s *KvStorer) picKey(key string) string {
+	return fmt.Sprintf("I:%s", key)
 }
 
 var rootName string = "/"

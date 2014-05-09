@@ -45,7 +45,7 @@ func (i *Index) UpdateAll() {
 
 	i.Cleanup(i.rootAlbum())
 	i.UpdateAlbum(i.conf.AlbumDir, i.rootAlbum())
-	//i.UpdateHighLights(i.rootAlbum(), "")
+	i.UpdateHighLights(i.rootAlbum())
 
 	log.Print("Index update completed.")
 }
@@ -89,12 +89,12 @@ func (i *Index) UpdateAlbum(dir string, album *Album) {
 				child = &Album{
 					Id:           id,
 					ParentId:     album.Id,
-					Path:         nm,
+					Path:         id,
 					Name:         nm,
 					HighlightPic: "",
 				}
 			}
-			log.Printf("Indexing Album %v", child)
+			log.Printf("Indexing Album %s", child.Id)
 			err = i.store.CreateAlbum(child)
 			if err != nil {
 				log.Print(err)
@@ -109,7 +109,7 @@ func (i *Index) UpdateAlbum(dir string, album *Album) {
 				pic := &Pic{
 					Id:      id,
 					AlbumId: album.Id,
-					Path:    f.Name(),
+					Path:    id,
 					Name:    f.Name(),
 					ModTime: ts,
 				}
@@ -117,7 +117,7 @@ func (i *Index) UpdateAlbum(dir string, album *Album) {
 				if err != nil {
 					log.Print(err)
 				} else {
-					log.Printf("Indexing Pic %v", pic)
+					log.Printf("Indexing Pic %s", pic.Id)
 					err = i.store.CreatePic(pic)
 					if err != nil {
 						log.Print(err)
@@ -129,7 +129,7 @@ func (i *Index) UpdateAlbum(dir string, album *Album) {
 	}
 }
 
-func (i *Index) SubAlbums(album *Album) []Album {
+func (i *Index) subAlbums(album *Album) []Album {
 	albums, err := i.store.GetAlbums(album.Id)
 	if err != nil {
 		log.Fatal(err) // TODO: log & ignore ?
@@ -137,7 +137,7 @@ func (i *Index) SubAlbums(album *Album) []Album {
 	return albums
 }
 
-func (i *Index) Album(id string) *Album {
+func (i *Index) album(id string) *Album {
 	album, err := i.store.GetAlbum(id)
 	if err != nil {
 		log.Fatal(err) // TODO: log & ignore ?
@@ -145,7 +145,15 @@ func (i *Index) Album(id string) *Album {
 	return album
 }
 
-func (i *Index) AlbumPics(album *Album) []Pic {
+func (i *Index) pic(id string) *Pic {
+	pic, err := i.store.GetPic(id)
+	if err != nil {
+		log.Fatal(err) // TODO: log & ignore ?
+	}
+	return pic
+}
+
+func (i *Index) albumPics(album *Album) []Pic {
 	pics, err := i.store.GetAlbumPics(album.Id)
 	if err != nil {
 		log.Fatal(err) // TODO: log & ignore ?
@@ -176,41 +184,43 @@ func (i *Index) scaledPath(fp, prefix, ext string) (patht string, err error) {
 	return dest, nil
 }
 
-// Returns whether the album index is drty
-/*func (i *Index) UpdateHighLights(a *Album, dir string) bool {
+// Recursively make sure all albums have an highlight
+func (i *Index) UpdateHighLights(a *Album) {
+	log.Printf("UH %s", a.Id)
 
-  dirty := false
+	// Recurse first since an album highlight might bubbe up.
+	subs := i.subAlbums(a)
+	for c, _ := range subs {
+		sub := &subs[c]
+		i.UpdateHighLights(sub)
+	}
 
-  // Recurse first since an album highlight might bubbe up.
-  dir = path.Join(dir, a.Path)
-  for c, _ := range a.Children {
-    child := &a.Children[c]
-    dirty = i.UpdateHighLights(child, dir) || dirty
-  }
+	if len(a.HighlightPic) > 0 && i.pic(a.HighlightPic) != nil {
+		// Valid highlight, leave it alone
+		return
+	}
 
-  if len(a.HighlightPic) > 0 && a.Pic(a.HighlightPic) != nil {
-    // Valid highlight, leave it alone
-    return dirty
-  }
+	// if no highlight defined return first pic of album
+	pics := i.albumPics(a)
+	if len(pics) > 0 {
+		p := pics[0].Path
+		nm := p[:len(p)-len(filepath.Ext(p))] + ".png"
+		a.HighlightPic = nm
+		log.Printf("UH -> %s", nm)
+		i.store.UpdateAlbum(a)
+		return
+	}
 
-  // if no highlight defined return first pic of album
-  if len(a.pics) > 0 {
-    dirty = true
-    p := a.pics[0].Path
-    nm := p[:len(p)-len(filepath.Ext(p))] + ".png"
-    a.HighlightPic = path.Join(dir, nm)
-    return dirty
-  }
-
-  // If no images in album, return highlight of first subalbum
-  if len(a.Children) > 0 {
-    dirty = true
-    a.HighlightPic = a.Children[0].HighlightPic
-    return dirty
-  }
-
-  // Nothing found, leave it alone, will try again next time
-  a.HighlightPic = ""
-
-  return dirty
-}*/
+	// If no images in album, return highlight of first subalbum that has one
+	for c, _ := range subs {
+		sub := &subs[c]
+		if len(sub.HighlightPic) > 0 {
+			a.HighlightPic = sub.HighlightPic
+			log.Printf("UH2 -> %s", a.HighlightPic)
+			i.store.UpdateAlbum(a)
+			return
+		}
+	}
+	log.Printf("No highight for %s", a.Id)
+	// Nothing found, leave it alone, will try again next time
+}

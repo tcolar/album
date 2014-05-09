@@ -37,22 +37,46 @@ func TestIndex(t *testing.T) {
 		panic(err)
 	}
 
-	sz, err := store.db.Size()
-	log.Printf("Size: %d %v", sz, err)
-
 	index.UpdateAll()
 
-	sz, err = store.db.Size()
-	log.Printf("Size: %d %v", sz, err)
-	b, err := store.db.Get([]byte("/d1"), nil)
-	log.Print("Got: %s", b)
-	dumpDb(kv.DB(*store.db))
+	//dumpDb(kv.DB(*store.db))
 
 	// TODO: check no changes
 	checkRoot(t, "Initial index", index)
 
 	// TODO: Test cleanup, updates, chnages etc ....
 	// TODO: Test ordering
+
+	Convey("Checking highlights.", t, func() {
+		So(album(index, "/d1/d11").HighlightPic, ShouldEqual, "/d1/d11/Cart_1.png")
+		So(album(index, "/d1").HighlightPic, ShouldEqual, "/d1/d11/Cart_1.png")
+		So(album(index, "/d2").HighlightPic, ShouldEqual, "/d2/DownArrow.png")
+		So(album(index, "/").HighlightPic, ShouldEqual, "/Minus.png")
+	})
+
+	Convey("Deleting image from index should work.", t, func() {
+		key := "/d1/d11/Cart_2.png"
+		So(pic(index, key), ShouldNotEqual, nil)
+		err = index.store.DelPic(key)
+		if err != nil {
+			panic(err)
+		}
+		So(pic(index, key), ShouldEqual, nil)
+		So(pic(index, "/d1/d11/Cart_1.png"), ShouldNotEqual, nil) // Should still be there
+	})
+
+	Convey("Deleting album from index should work.", t, func() {
+		key := "/d1"
+		So(album(index, key), ShouldNotEqual, nil)
+		err = index.store.DelAlbum(key)
+		if err != nil {
+			panic(err)
+		}
+		So(album(index, key), ShouldEqual, nil)
+		So(album(index, "/d1/d11"), ShouldEqual, nil)          // subAlbums should be gone too
+		So(pic(index, "/d1/d11/Cart_1.png"), ShouldEqual, nil) // and any pics within
+		So(album(index, "/d2"), ShouldNotEqual, nil)           // should still be there
+	})
 }
 
 // check the initial root album
@@ -64,42 +88,71 @@ func checkRoot(t *testing.T, testTitle string, index *Index) {
 			log.Fatal(err)
 		}
 
-		pics := index.AlbumPics(root)
-		albums := index.AlbumPics(root)
-
+		// checking root album
 		So(root, ShouldNotEqual, nil)
+		So(album(index, "/"), ShouldNotEqual, nil)
+		So(album(index, "/").Id, ShouldEqual, "/")
+
+		pics := index.albumPics(root)
+		albums := index.subAlbums(root)
 
 		So(len(pics), ShouldEqual, 2)
 		So(len(albums), ShouldEqual, 2)
 
-		/*fb := root.Child("foobar")
-		  So(fb, ShouldEqual, nil)
+		So(album(index, "/foobar"), ShouldEqual, nil)
 
-		  So(len(root.pics), ShouldEqual, 2)
-		  So(root.Pic("Cart_1.png"), ShouldEqual, nil)
-		  So(root.Pic("Minus.png"), ShouldNotEqual, nil)
+		So(pics[0].Id, ShouldEqual, "/Minus.png")
+		So(pics[1].Id, ShouldEqual, "/Plus.png")
 
-		  d1 := root.Child("d1")
+		d1 := album(index, "/d1")
 
-		  So(d1, ShouldNotEqual, nil)
-		  So(len(d1.Children), ShouldEqual, 1)
-		  So(len(d1.pics), ShouldEqual, 0)
+		So(d1, ShouldNotEqual, nil)
+		So(len(index.subAlbums(d1)), ShouldEqual, 1)
+		So(len(index.albumPics(d1)), ShouldEqual, 0)
 
-		  d2 := root.Child("d2")
-		  So(d2, ShouldNotEqual, nil)
-		  So(len(d2.Children), ShouldEqual, 0)
-		  So(len(d2.pics), ShouldEqual, 1)
+		d2 := album(index, "/d2")
+		So(d2, ShouldNotEqual, nil)
+		So(len(index.subAlbums(d2)), ShouldEqual, 0)
+		So(len(index.albumPics(d2)), ShouldEqual, 1)
 
-		  d11 := d1.Child("d11")
-		  So(d11, ShouldNotEqual, nil)
-		  So(len(d11.Children), ShouldEqual, 0)
-		  So(len(d11.pics), ShouldEqual, 2)
+		d11 := album(index, "/d1/d11")
+		So(d11, ShouldNotEqual, nil)
+		So(len(index.subAlbums(d11)), ShouldEqual, 0)
+		So(len(index.albumPics(d11)), ShouldEqual, 2)
 
-		  So(d11.Path, ShouldEqual, "d11")
-		  So(d11.Name, ShouldEqual, "d11")
-		  So(d11.Ordering, ShouldEqual, 0)
-		  So(d11.Hidden, ShouldEqual, false)*/
+		So(d11.Id, ShouldEqual, "/d1/d11")
+		So(d11.ParentId, ShouldEqual, "/d1")
+		So(d11.Path, ShouldEqual, "/d1/d11")
+		So(d11.Name, ShouldEqual, "d11")
+		So(d11.Ordering, ShouldEqual, 0)
+		So(d11.Hidden, ShouldEqual, false)
+
+		So(pic(index, "/Cart_1.png"), ShouldEqual, nil)
+		cart1 := pic(index, "/d1/d11/Cart_1.png")
+		So(cart1, ShouldNotEqual, nil)
+		So(cart1.Id, ShouldEqual, "/d1/d11/Cart_1.png")
+		So(cart1.AlbumId, ShouldEqual, "/d1/d11")
+		So(cart1.Path, ShouldEqual, "/d1/d11/Cart_1.png")
+		So(cart1.Name, ShouldEqual, "Cart_1.png")
+		So(cart1.Ordering, ShouldEqual, 0)
+		So(cart1.Hidden, ShouldEqual, false)
 	})
+}
+
+func album(index *Index, key string) *Album {
+	album, err := index.store.GetAlbum(key)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return album
+}
+
+func pic(index *Index, key string) *Pic {
+	pic, err := index.store.GetPic(key)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return pic
 }
 
 func dumpDb(db kv.DB) {
@@ -108,8 +161,8 @@ func dumpDb(db kv.DB) {
 		log.Fatal(err)
 	}
 	log.Print("Db keys:")
-	i := 0
-	for k, _, e := enum.Next(); e == nil && i < 10; i++ {
+	k, _, e := enum.Next()
+	for ; e == nil; k, _, e = enum.Next() {
 		log.Print(string(k))
 	}
 }

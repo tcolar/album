@@ -62,6 +62,7 @@ Features:
 #API features
 - API's to retrieve albums & pics -> + to embed in other site ?
 - API's to modify data ?
+- Ability to do image ops in memory ad then stream them straight ? (No disk)
 
 #Other features
 - Stats (# of views) for images ?

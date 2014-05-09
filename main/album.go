@@ -30,6 +30,10 @@ func main() {
 		// TODO : If that option was chnaged form false to true would have to regenreate large scaled images.
 		ResizeOriginal: false,
 	}
-	s := album.NewServer(conf)
+	store, err := album.NewKvStorer("/tmp/album_db")
+	if err != nil {
+		log.Fatalf("Failed to open db. %v", err)
+	}
+	s := album.NewServer(&conf, store)
 	s.Run()
 }

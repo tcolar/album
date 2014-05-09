@@ -17,32 +17,33 @@ import (
 	"github.com/martini-contrib/sessions"
 )
 
-func NewServer(conf AlbumConfig) *Server {
+func NewServer(conf *AlbumConfig, store Storer) *Server {
 
 	CreateAdminUser(conf.AdminPassword)
 
+	index, err := NewIndex(conf, store)
+	if err != nil {
+		panic(err)
+	}
 	return &Server{
-		Conf: conf,
+		Conf:  conf,
+		index: index,
+		api:   Api{},
 	}
 }
 
 type Server struct {
-	Conf  AlbumConfig
+	Conf  *AlbumConfig
 	index *Index
 	api   Api
 }
 
 func (s *Server) Run() {
 
-	index, err := NewIndex(&s.Conf)
-	if err != nil {
-		panic(err)
-	}
-	s.index = index
-	s.api = Api{}
+	defer s.index.store.Shutdown()
 
 	// Index all albums & images asynchronously
-	go index.UpdateAll()
+	go s.index.UpdateAll()
 
 	m := martini.Classic()
 
@@ -57,6 +58,7 @@ func (s *Server) Run() {
 	root := s.Conf.AlbumDir
 
 	// Serve pictures & static content
+	// TODO: Chnage this maybe as it could be dangerous potentially ?
 	m.Use(martini.Static(root, martini.StaticOptions{}))
 
 	// Login
@@ -73,6 +75,8 @@ func (s *Server) Run() {
 
 	log.Printf("Started on port %d", s.Conf.Port)
 	http.ListenAndServe(fmt.Sprintf(":%d", s.Conf.Port), m)
+
+	log.Print("Done")
 }
 
 func (s *Server) login(session sessions.Session, user User, r render.Render, req *http.Request) {
@@ -99,24 +103,19 @@ func (s *Server) servePics(r render.Render, req *http.Request, res http.Response
 	pics := [][]string{}
 
 	parts := strings.Split(req.URL.Path, "/")
-	log.Print(parts)
-	album := &s.index.root
-	log.Print(albums)
-	for _, p := range parts {
-		if len(p) == 0 {
-			continue
-		}
-		album = album.Child(p)
-		if album == nil {
-			break
-		}
+	id := path.Join(parts...)
+	log.Print(id)
+	album, err := s.index.store.GetAlbum(id)
+	if err != nil {
+		log.Fatalf("Failed to get album. %v", err)
 	}
+	log.Print(album)
 
 	if album != nil {
-		for _, a := range album.Children {
+		for _, a := range s.index.SubAlbums(album) {
 			albums = append(albums, a)
 		}
-		for _, p := range album.pics {
+		for _, p := range s.index.AlbumPics(album) {
 			nm := p.Path[:len(p.Path)-len(filepath.Ext(p.Path))] + ".png"
 			pics = append(pics, []string{
 				path.Join(req.URL.Path, p.Path),

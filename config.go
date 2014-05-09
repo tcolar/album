@@ -35,14 +35,3 @@ type MediaSizing struct {
 	// What height (at most) should the image be scaled to for this.
 	MaxScaleHeight int
 }
-
-/*
-
-/*
-<picture>
-  <source srcset="examples/images/large.jpg" media="(min-width: 1024px)">
-  <source srcset="examples/images/medium.jpg" media="(min-width: 640px)">
-  <source srcset="examples/images/small.jpg">
-  <img srcset="examples/images/medium.jpg" alt="A giant stone face at The Bayon temple in Angkor Thom, Cambodia">
-</picture>
-*/

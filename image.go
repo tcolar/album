@@ -29,11 +29,24 @@ func (c ImageSvc) CreateThumbnail(originalPath, destPath string, w, h int) error
 	if err != nil {
 		return err
 	}
-	img, err = c.ScaledWithin(img, 200, 200)
+	img, err = c.ScaledWithin(img, w, h)
 	if err != nil {
 		return err
 	}
-	img, err = c.PadImage(img, 200, 200)
+	img, err = c.PadImage(img, w, h)
+	if err != nil {
+		return err
+	}
+	return c.SaveImage(img, destPath)
+}
+
+// CreateScaled creates an image of at most w, h (keeps aspect ratio intact)
+func (c ImageSvc) CreateScaled(originalPath, destPath string, w, h int) error {
+	img, err := c.ReadImage(originalPath)
+	if err != nil {
+		return err
+	}
+	img, err = c.ScaledWithin(img, w, h)
 	if err != nil {
 		return err
 	}
@@ -49,6 +62,15 @@ func (c ImageSvc) IsImage(f os.FileInfo) bool {
 		}
 	}
 	return false
+}
+
+// ImageSize checks an image dimensions
+func (c ImageSvc) ImageSize(filePath string) (x int, y int, err error) {
+	img, err := c.ReadImage(filePath)
+	if err != nil {
+		return 0, 0, err
+	}
+	return img.Bounds().Dx(), img.Bounds().Dx(), nil
 }
 
 // Pad the image with transparency

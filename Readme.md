@@ -32,6 +32,7 @@ Features:
 * Impement index store using KV store.
 
 ### TODO:
+- 1) Close db roperly, defer called doesn'e seem to happen when CTRL^C'd
 - 1) "Breacrumbs" / Album navigation
 - 2) Header / footer or "embedding" (spit out html ??)
 - 2) Make it obvious what's an album vs what's an image ?

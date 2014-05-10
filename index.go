@@ -102,16 +102,31 @@ func (i *Index) UpdateAlbum(dir string, album *Album) {
 		} else {
 			// file
 			ts := f.ModTime().Unix()
-			if i.imgSvc.IsImage(f) && ts > album.LastPicModTime {
+			if i.imgSvc.IsImage(f) {
 				id := path.Join(album.Id, nm)
+				img, err := i.store.GetPic(id)
+				if err != nil {
+					log.Print(err)
+					continue
+				}
+				if img != nil && img.ModTime >= ts {
+					continue // alreday up to date
+				}
+				w, h, err := i.imgSvc.ImageSize(fp)
+				if err != nil {
+					log.Print(err)
+					continue
+				}
 				pic := &Pic{
 					Id:      id,
 					AlbumId: album.Id,
 					Path:    id,
 					Name:    f.Name(),
 					ModTime: ts,
+					Width:   w,
+					Height:  h,
 				}
-				err := i.createScaledImages(fp)
+				err = i.createScaledImages(fp, w, h)
 				if err != nil {
 					log.Print(err)
 				} else {
@@ -160,13 +175,55 @@ func (i *Index) albumPics(album *Album) []Pic {
 }
 
 //  createScaledImages creates scaled down version of the images (thumbnails etc..)
-func (i *Index) createScaledImages(fp string) error {
+// Thumbnail, small, medium, large
+// Note: small, medium and large only get created if they would be smaller than te original
+func (i *Index) createScaledImages(fp string, w, h int) error {
 	log.Printf("Creating scaled images for %s", fp)
+	c := i.conf
+	// Thumbnail - Always saving those in PNG sice we want transparent padding
 	dest, err := i.scaledPath(fp, "thumb", ".png")
 	if err != nil {
 		return err
 	}
-	return i.imgSvc.CreateThumbnail(fp, dest, 200, 200)
+	err = i.imgSvc.CreateThumbnail(fp, dest, c.ThumbSize.MaxScaleWidth, c.ThumbSize.MaxScaleHeight)
+	if err != nil {
+		return err
+	}
+	if w > c.SmallSize.MaxScaleWidth || h > c.SmallSize.MaxScaleHeight {
+		dest, err = i.scaledPath(fp, "small", path.Ext(fp))
+		if err != nil {
+			return err
+		}
+		err = i.imgSvc.CreateScaled(fp, dest, c.SmallSize.MaxScaleWidth, c.SmallSize.MaxScaleHeight)
+		if err != nil {
+			return err
+		}
+	}
+	if w > c.MedSize.MaxScaleWidth || h > c.MedSize.MaxScaleHeight {
+		dest, err = i.scaledPath(fp, "medium", path.Ext(fp))
+		if err != nil {
+			return err
+		}
+		err = i.imgSvc.CreateScaled(fp, dest, c.MedSize.MaxScaleWidth, c.MedSize.MaxScaleHeight)
+		if err != nil {
+			return err
+		}
+	}
+	if c.ResizeOriginal {
+		dest = fp
+	} else {
+		dest, err = i.scaledPath(fp, "large", path.Ext(fp))
+		if err != nil {
+			return err
+		}
+	}
+	if w > c.LargeSize.MaxScaleWidth || h > c.LargeSize.MaxScaleHeight {
+		err = i.imgSvc.CreateScaled(fp, dest, c.LargeSize.MaxScaleWidth, c.LargeSize.MaxScaleHeight)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // scaledPath returns the web path of a scaled image
@@ -184,7 +241,6 @@ func (i *Index) scaledPath(fp, prefix, ext string) (patht string, err error) {
 
 // UpdateHighLights recursively make sure all albums have an highlight
 func (i *Index) UpdateHighLights(a *Album) {
-	log.Printf("UH %s", a.Id)
 
 	// Recurse first since an album highlight might bubbe up.
 	subs := i.subAlbums(a)
@@ -204,7 +260,6 @@ func (i *Index) UpdateHighLights(a *Album) {
 		p := pics[0].Path
 		nm := p[:len(p)-len(filepath.Ext(p))] + ".png"
 		a.HighlightPic = nm
-		log.Printf("UH -> %s", nm)
 		i.store.UpdateAlbum(a)
 		return
 	}
@@ -214,11 +269,9 @@ func (i *Index) UpdateHighLights(a *Album) {
 		sub := &subs[c]
 		if len(sub.HighlightPic) > 0 {
 			a.HighlightPic = sub.HighlightPic
-			log.Printf("UH2 -> %s", a.HighlightPic)
 			i.store.UpdateAlbum(a)
 			return
 		}
 	}
-	log.Printf("No highight for %s", a.Id)
 	// Nothing found, leave it alone, will try again next time
 }

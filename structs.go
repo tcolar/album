@@ -4,15 +4,14 @@ package album
 
 // Album represents a collection of Pics
 type Album struct {
-	Id             string // Unique storer key
-	ParentId       string // key of parent album
-	Path           string // Relative path from album root
-	Name           string // Pretty name, defualts to folder name
-	Description    string
-	HighlightPic   string // Album highlight picture key.
-	Ordering       int    // if equal secondary ordering is by name
-	Hidden         bool   // whether that album/folder should be hidden
-	LastPicModTime int64  // timestamp of most recent picture in the album
+	Id           string // Unique storer key
+	ParentId     string // key of parent album
+	Path         string // Relative path from album root
+	Name         string // Pretty name, defualts to folder name
+	Description  string
+	HighlightPic string // Album highlight picture key.
+	Ordering     int    // if equal secondary ordering is by name
+	Hidden       bool   // whether that album/folder should be hidden
 }
 
 func (a Album) Pics() []Pic {
@@ -41,4 +40,6 @@ type Pic struct {
 	Ordering    int  // if 0 will order by path
 	Hidden      bool // whether that picture should be hidden / desactivated
 	ModTime     int64
+	Width       int // width of origina in pixel
+	Height      int // width of original in pixels
 }

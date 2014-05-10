@@ -13,7 +13,11 @@ import (
 )
 
 var testConf = AlbumConfig{
-	AlbumDir: "./tmp/",
+	AlbumDir:  "./tmp/",
+	ThumbSize: MediaSizing{0, 200, 200},
+	SmallSize: MediaSizing{0, 600, 900},
+	MedSize:   MediaSizing{640, 1000, 1400},
+	LargeSize: MediaSizing{1280, 1440, 1440},
 }
 
 func TestIndex(t *testing.T) {

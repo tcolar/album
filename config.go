@@ -10,7 +10,7 @@ type AlbumConfig struct {
 	AdminPassword string
 
 	// Thumbnails of at most "thumbsize" will go in /_scaled/thumb/
-	ThumbSize int
+	ThumbSize MediaSizing
 
 	// See http://foundation.zurb.com/docs/media-queries.html for small, medium, large specs
 	// Scaled small image will be served to small devices (~phones) /_scaled/small/

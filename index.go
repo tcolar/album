@@ -187,9 +187,10 @@ func (i *Index) albumPics(album *Album) []Pic {
 	return pics
 }
 
-//  createScaledImages creates scaled down version of the images (thumbnails etc..)
+// createScaledImages creates scaled down version of the images (thumbnails etc..)
 // Thumbnail, small, medium, large
-// Note: Scalled down version only created if they would be smaller than the original
+// TODO: If the scaled version would be higher reolution than the original maybe
+// just create a link (or copy on windows) rather than waste disk space ?
 func (i *Index) createScaledImages(fp string, w, h int) error {
 	log.Printf("Creating scaled images for %s", fp)
 	c := i.conf

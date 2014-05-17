@@ -9,20 +9,11 @@ type AlbumConfig struct {
 	Port          int
 	AdminPassword string
 
-	// Thumbnails of at most "thumbsize" will go in /_scaled/thumb/
-	ThumbSize MediaSizing
+	// List of different "sizes"(key) we will scale images too
+	MediaSizes map[string]MediaSizing
 
-	// See http://foundation.zurb.com/docs/media-queries.html for small, medium, large specs
-	// Scaled small image will be served to small devices (~phones) /_scaled/small/
-	SmallSize MediaSizing
-	// Scaled medium inages to be served to midsize devices (~tablets) /_scaled/medium/
-	MedSize MediaSizing
-	// Scaled large inages to be served to large devices (~PC)
-	// Will either be the original if ResizeOriginal is true or a new image under /_scaled/large/
-	LargeSize MediaSizing
-	// Do we Resize and REPLACE the originals to be the "LargeSize" or leave them intact ?
-	// In which case a new file will be created for large under /_scaled/large/
-	ResizeOriginal bool
+	// Do we Keep the original or remove it after scaling is done ?
+	// TODO : RemoveOriginal bool
 }
 
 // Defines image scaling in relation to viewport size (HTML media queries)
@@ -34,4 +25,14 @@ type MediaSizing struct {
 	MaxScaleWidth int
 	// What height (at most) should the image be scaled to for this.
 	MaxScaleHeight int
+	// Whether to pad the image with tranaparency to make it EXACTLY the given size
+	PadOnScale bool
+}
+
+// Default sizes for photo album
+var StdAlbumSizes map[string]MediaSizing = map[string]MediaSizing{
+	"thumb":  MediaSizing{0, 200, 200, true},
+	"small":  MediaSizing{0, 600, 900, false},
+	"medium": MediaSizing{640, 1000, 1400, false},
+	"large":  MediaSizing{1280, 1440, 1440, false},
 }

@@ -40,7 +40,7 @@ type Server struct {
 
 func (s *Server) Run() {
 
-	defer s.index.store.Shutdown()
+	defer s.index.store.Shutdown() // Todo: use sync.waitgroup instead ?
 
 	// Index all albums & images asynchronously
 	go s.index.UpdateAll()
@@ -58,7 +58,7 @@ func (s *Server) Run() {
 	root := s.Conf.AlbumDir
 
 	// Serve pictures & static content
-	// TODO: Chnage this maybe as it could be dangerous potentially ?
+	// TODO: Change this maybe to only server actual images ?
 	m.Use(martini.Static(root, martini.StaticOptions{}))
 
 	// Login
@@ -74,7 +74,10 @@ func (s *Server) Run() {
 	m.Get("/**", s.servePics)
 
 	log.Printf("Started on port %d", s.Conf.Port)
-	http.ListenAndServe(fmt.Sprintf(":%d", s.Conf.Port), m)
+	err := http.ListenAndServe(fmt.Sprintf(":%d", s.Conf.Port), m)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	log.Print("Done")
 }

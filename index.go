@@ -27,27 +27,6 @@ func NewIndex(conf *AlbumConfig, store Storer) (indexer *Index, err error) {
 	return &index, nil
 }
 
-func (i *Index) rootAlbum() *Album {
-	root, err := i.store.GetRoot()
-	if err != nil {
-		log.Fatalf("Failed to get root album. %v", err)
-	}
-	return root
-}
-
-// UpdateAll scans the image folder and update the database with found album and pictures
-// For new & updated pictures it will also create scaled down versions & thumbnails
-func (i *Index) UpdateAll() {
-
-	log.Printf("Starting index update : %s", i.conf.AlbumDir)
-
-	i.Cleanup(i.rootAlbum())
-	i.UpdateAlbum(i.conf.AlbumDir, i.rootAlbum())
-	i.UpdateHighLights(i.rootAlbum())
-
-	log.Print("Index update completed.")
-}
-
 // Cleanup removes albums & pics that are no longer present on disk, from the index.
 // Returns whether the album index is dirty
 // Also will set dirty var on individual albums as needed
@@ -65,6 +44,19 @@ func (i *Index) Cleanup(album *Album) bool {
 	// TODO mae sure to mark album dirty if any images chnaged.
 
 	return dirty
+}
+
+// UpdateAll scans the image folder and update the database with found album and pictures
+// For new & updated pictures it will also create scaled down versions & thumbnails
+func (i *Index) UpdateAll() {
+
+	log.Printf("Starting index update : %s", i.conf.AlbumDir)
+
+	i.Cleanup(i.rootAlbum())
+	i.UpdateAlbum(i.conf.AlbumDir, i.rootAlbum())
+	i.UpdateHighLights(i.rootAlbum())
+
+	log.Print("Index update completed.")
 }
 
 // UpdateAlbum rescursively scans the album file system and update the index.
@@ -142,103 +134,6 @@ func (i *Index) UpdateAlbum(dir string, album *Album) {
 	}
 }
 
-func (i *Index) subAlbums(album *Album) []Album {
-	albums, err := i.store.GetAlbums(album.Id)
-	if err != nil {
-		log.Fatal(err) // TODO: log & ignore ?
-	}
-	return albums
-}
-
-func (i *Index) album(id string) *Album {
-	album, err := i.store.GetAlbum(id)
-	if err != nil {
-		log.Fatal(err) // TODO: log & ignore ?
-	}
-	return album
-}
-
-func (i *Index) pic(id string) *Pic {
-	pic, err := i.store.GetPic(id)
-	if err != nil {
-		log.Fatal(err) // TODO: log & ignore ?
-	}
-	return pic
-}
-
-func (i *Index) albumPics(album *Album) []Pic {
-	pics, err := i.store.GetAlbumPics(album.Id)
-	if err != nil {
-		log.Fatal(err) // TODO: log & ignore ?
-	}
-	return pics
-}
-
-//  createScaledImages creates scaled down version of the images (thumbnails etc..)
-// Thumbnail, small, medium, large
-// Note: small, medium and large only get created if they would be smaller than te original
-func (i *Index) createScaledImages(fp string, w, h int) error {
-	log.Printf("Creating scaled images for %s", fp)
-	c := i.conf
-	// Thumbnail - Always saving those in PNG sice we want transparent padding
-	dest, err := i.scaledPath(fp, "thumb", ".png")
-	if err != nil {
-		return err
-	}
-	err = i.imgSvc.CreateThumbnail(fp, dest, c.ThumbSize.MaxScaleWidth, c.ThumbSize.MaxScaleHeight)
-	if err != nil {
-		return err
-	}
-	if w > c.SmallSize.MaxScaleWidth || h > c.SmallSize.MaxScaleHeight {
-		dest, err = i.scaledPath(fp, "small", path.Ext(fp))
-		if err != nil {
-			return err
-		}
-		err = i.imgSvc.CreateScaled(fp, dest, c.SmallSize.MaxScaleWidth, c.SmallSize.MaxScaleHeight)
-		if err != nil {
-			return err
-		}
-	}
-	if w > c.MedSize.MaxScaleWidth || h > c.MedSize.MaxScaleHeight {
-		dest, err = i.scaledPath(fp, "medium", path.Ext(fp))
-		if err != nil {
-			return err
-		}
-		err = i.imgSvc.CreateScaled(fp, dest, c.MedSize.MaxScaleWidth, c.MedSize.MaxScaleHeight)
-		if err != nil {
-			return err
-		}
-	}
-	if c.ResizeOriginal {
-		dest = fp
-	} else {
-		dest, err = i.scaledPath(fp, "large", path.Ext(fp))
-		if err != nil {
-			return err
-		}
-	}
-	if w > c.LargeSize.MaxScaleWidth || h > c.LargeSize.MaxScaleHeight {
-		err = i.imgSvc.CreateScaled(fp, dest, c.LargeSize.MaxScaleWidth, c.LargeSize.MaxScaleHeight)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// scaledPath returns the web path of a scaled image
-func (i *Index) scaledPath(fp, prefix, ext string) (patht string, err error) {
-	rel, err := filepath.Rel(i.conf.AlbumDir, fp)
-	if err != nil {
-		return "", err
-	}
-	file := filepath.Base(rel)
-	file = file[:len(file)-len(path.Ext(file))] + ext
-
-	dest := path.Join(i.conf.AlbumDir, "_scaled", prefix, filepath.Dir(rel), file)
-	return dest, nil
-}
-
 // UpdateHighLights recursively make sure all albums have an highlight
 func (i *Index) UpdateHighLights(a *Album) {
 
@@ -274,4 +169,84 @@ func (i *Index) UpdateHighLights(a *Album) {
 		}
 	}
 	// Nothing found, leave it alone, will try again next time
+}
+
+func (i *Index) album(id string) *Album {
+	album, err := i.store.GetAlbum(id)
+	if err != nil {
+		log.Fatal(err) // TODO: log & ignore ?
+	}
+	return album
+}
+
+func (i *Index) albumPics(album *Album) []Pic {
+	pics, err := i.store.GetAlbumPics(album.Id)
+	if err != nil {
+		log.Fatal(err) // TODO: log & ignore ?
+	}
+	return pics
+}
+
+//  createScaledImages creates scaled down version of the images (thumbnails etc..)
+// Thumbnail, small, medium, large
+// Note: Scalled down version only created if they would be smaller than the original
+func (i *Index) createScaledImages(fp string, w, h int) error {
+	log.Printf("Creating scaled images for %s", fp)
+	c := i.conf
+
+	for key, size := range c.MediaSizes {
+		if w > size.MaxScaleWidth || h > size.MaxScaleHeight {
+			ext := path.Ext(fp)
+			if size.PadOnScale {
+				ext = ".png"
+			}
+			dest, err := i.scaledPath(fp, key, ext)
+			if err != nil {
+				return err
+			}
+
+			err = i.imgSvc.CreateScaled(fp, dest, size.MaxScaleWidth, size.MaxScaleHeight, size.PadOnScale)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (i *Index) pic(id string) *Pic {
+	pic, err := i.store.GetPic(id)
+	if err != nil {
+		log.Fatal(err) // TODO: log & ignore ?
+	}
+	return pic
+}
+
+func (i *Index) rootAlbum() *Album {
+	root, err := i.store.GetRoot()
+	if err != nil {
+		log.Fatalf("Failed to get root album. %v", err)
+	}
+	return root
+}
+
+// scaledPath returns the web path of a scaled image
+func (i *Index) scaledPath(fp, prefix, ext string) (patht string, err error) {
+	rel, err := filepath.Rel(i.conf.AlbumDir, fp)
+	if err != nil {
+		return "", err
+	}
+	file := filepath.Base(rel)
+	file = file[:len(file)-len(path.Ext(file))] + ext
+
+	dest := path.Join(i.conf.AlbumDir, "_scaled", prefix, filepath.Dir(rel), file)
+	return dest, nil
+}
+
+func (i *Index) subAlbums(album *Album) []Album {
+	albums, err := i.store.GetAlbums(album.Id)
+	if err != nil {
+		log.Fatal(err) // TODO: log & ignore ?
+	}
+	return albums
 }

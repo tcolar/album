@@ -24,12 +24,7 @@ func main() {
 		AlbumDir:      flag.Args()[0],
 		Port:          *port,
 		AdminPassword: *password,
-		ThumbSize:     album.MediaSizing{0, 200, 200},
-		SmallSize:     album.MediaSizing{0, 600, 900},
-		MedSize:       album.MediaSizing{640, 1000, 1400},
-		LargeSize:     album.MediaSizing{1280, 1440, 1440},
-		// TODO : If that option was chnaged form false to true would have to regenreate large scaled images.
-		ResizeOriginal: false,
+		MediaSizes:    album.StdAlbumSizes,
 	}
 	// TODO: Relative path db
 	store, err := album.NewKvStorer("/tmp/album_db")

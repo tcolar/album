@@ -4,15 +4,18 @@
 Work In Progress, not usable yet.
 *********************************
 
-A simple standalone photo gallery server & image processor.
+A simple standalone photo gallery server & adaptive image processor.
 
 Features:
-  * Lightweight, based on flat files and in memory. No database or complex setup needed (for now).
+  * Lightweight, based on flat files and embedded Key / Value store (KV).
   * Responsive : Adapts to mobile devices and such and provides scaled images & thumbnails automatically.
-  * Albums & images with meta data and ordering
-  * Image Scaling / Rotating / Padding service
+  + Albums & images with meta data and ordering
+  + Image Scaling / Rotating / Padding service
   - Built-in admin API to manage content
   - REST API to use image server and content from external systems.
+
+
+---- TODO ---------------
 
 ### Done:
 * index albums
@@ -30,44 +33,48 @@ Features:
 * Admin login / Very basic API Auth
 * Make index store swappable (interface)
 * Impement index store using KV store.
+* Generate scaled images (full/1440 - 1000 - 600) + 200 for thumbnail
+* Ability to scale images (original)
+* Use an interface for all index "storage" ops, so could easily replace with some "real" db later
 
 ### TODO:
-- 1) Close db roperly, defer called doesn'e seem to happen when CTRL^C'd
+- 1) Close db Properly, defer call doesn't seem to happen when CTRL^C'd (sync.waitgroup ?)
 - 1) "Breacrumbs" / Album navigation
 - 2) Header / footer or "embedding" (spit out html ??)
 - 2) Make it obvious what's an album vs what's an image ?
-- 2) generate and server scaled images (full/1440 - 1000 - 600) + 200 for thumbnail
-  use https://github.com/scottjehl/picturefill ?
-- 3) ability to scale images (original)
+- 2) Make it possible to use/define cutome sizes (small, large, foo, bar)
+- 2) Serve scaled images (adaptive) use https://github.com/scottjehl/picturefill and/or custom option
+- 2) Lighten up foundation files / replace - custom lightroom ?
 - Make file store an interface too so could substitute file system for any other io impl.
-- Do image scaling in a go routine ? (would display not yet ready albums though)
-- Use an interface for all index "storage" ops, so could easily replace with some "real" db later
-- Sync JSON ops using channels to be concurent safe.
+- Parse and dsiplay EXIF data
+- Config file in some reasonable format, TOML ?
 
-- Auth : Have a password in a config file or such
+- Auth : Have a password in a config file or such ?
 - Auth : Secure cookie store id
 
 ### TESTING :
 - Test indexer changes / updates
-- Test mage processing ? hum might be tricky excecpt maybe test against pre-made test images ?
+- Test mage processing ? hum might be tricky except maybe test against pre-made test images ?
 - Test admin serices
 - Test API's
 
-# Admin features
+# Photo album Admin features
 - 2) ability to rotate images
 - 2) ability to delete images
 - 2) Update index (whole or indivual album/pics)
 - 3) ability to select highlight
 - 3) ability to update album meta (name, description, hidden etc..)
 - 3) ability to reorder items
-- implement hiiden albums & pics -> still can be accesed if no url ?? -> can be seen in json file !!
-- ability to upload image or zip of images
+- Implement hiiden albums & pics
+- Ability to upload image or zip of images
 
-#API features
+# API Features (Step2)
 - API's to retrieve albums & pics -> + to embed in other site ?
+- Ability to add / upadte/ delete image(s)
 - API's to modify data ?
 - Ability to do image ops in memory ad then stream them straight ? (No disk)
 
 #Other features
+- More general image storing / processing service.
 - Stats (# of views) for images ?
 

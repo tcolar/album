@@ -22,9 +22,10 @@ var ImageExts = []string{".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff"}
 type ImageSvc struct {
 }
 
-// CreateThumbnail creates a thumbnail of given size in png format
-// Keeps the original image scale & pad with transparency
-func (c ImageSvc) CreateThumbnail(originalPath, destPath string, w, h int) error {
+// CreateScaled creates an image of at most w, h (keeps aspect ratio intact).
+// Keeps the original image aspet ratio intact.
+// If pad is true, pads with transparency to make the inage size exactly w*h.
+func (c ImageSvc) CreateScaled(originalPath, destPath string, w, h int, pad bool) error {
 	img, err := c.ReadImage(originalPath)
 	if err != nil {
 		return err
@@ -33,22 +34,11 @@ func (c ImageSvc) CreateThumbnail(originalPath, destPath string, w, h int) error
 	if err != nil {
 		return err
 	}
-	img, err = c.PadImage(img, w, h)
-	if err != nil {
-		return err
-	}
-	return c.SaveImage(img, destPath)
-}
-
-// CreateScaled creates an image of at most w, h (keeps aspect ratio intact)
-func (c ImageSvc) CreateScaled(originalPath, destPath string, w, h int) error {
-	img, err := c.ReadImage(originalPath)
-	if err != nil {
-		return err
-	}
-	img, err = c.ScaledWithin(img, w, h)
-	if err != nil {
-		return err
+	if pad {
+		img, err = c.PadImage(img, w, h)
+		if err != nil {
+			return err
+		}
 	}
 	return c.SaveImage(img, destPath)
 }
